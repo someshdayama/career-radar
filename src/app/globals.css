@@ -14,13 +14,112 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #000000;
     --foreground: #ededed;
   }
 }
 
 body {
-  background: var(--background);
+  background: #000000;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Starfield layers */
+.starfield-sm,
+.starfield-md,
+.starfield-lg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.starfield-sm {
+  background-image:
+    radial-gradient(1px 1px at  52px  83px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 190px  40px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 310px 120px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 450px  28px, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1px 1px at 580px 170px, rgba(255,255,255,0.45), transparent),
+    radial-gradient(1px 1px at 720px  65px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 830px 200px, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 100px 260px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 250px 310px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 400px 380px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 550px 340px, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1px 1px at 680px 420px, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 800px 480px, rgba(255,255,255,0.45), transparent),
+    radial-gradient(1px 1px at 920px  90px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 1050px 150px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 1180px 250px, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1px 1px at 1300px  60px, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at  70px 520px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 200px 580px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 340px 640px, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1px 1px at 470px 550px, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 610px 700px, rgba(255,255,255,0.45), transparent),
+    radial-gradient(1px 1px at 750px 620px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 880px 760px, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 1000px 500px, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1px 1px at 1120px 680px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1px 1px at 1250px 540px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 1380px 400px, rgba(255,255,255,0.45), transparent),
+    radial-gradient(1px 1px at 150px 800px, rgba(255,255,255,0.35), transparent),
+    radial-gradient(1px 1px at 500px 850px, rgba(255,255,255,0.5), transparent);
+  background-size: 1440px 900px;
+  animation: twinkle-sm 6s ease-in-out infinite alternate;
+}
+
+.starfield-md {
+  background-image:
+    radial-gradient(1.5px 1.5px at 120px  50px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1.5px 1.5px at 380px 130px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1.5px 1.5px at 640px  90px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 900px 200px, rgba(255,255,255,0.65), transparent),
+    radial-gradient(1.5px 1.5px at 1160px  70px, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.5px 1.5px at 200px 350px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1.5px 1.5px at 460px 290px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 720px 410px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1.5px 1.5px at 980px 370px, rgba(255,255,255,0.45), transparent),
+    radial-gradient(1.5px 1.5px at 1240px 300px, rgba(255,255,255,0.55), transparent),
+    radial-gradient(1.5px 1.5px at  80px 500px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1.5px 1.5px at 340px 570px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 600px 530px, rgba(255,255,255,0.65), transparent),
+    radial-gradient(1.5px 1.5px at 860px 600px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 1100px 480px, rgba(255,255,255,0.55), transparent);
+  background-size: 1440px 900px;
+  animation: twinkle-md 8s ease-in-out infinite alternate;
+}
+
+.starfield-lg {
+  background-image:
+    radial-gradient(2px 2px at 260px 110px, rgba(255,255,255,0.85), transparent),
+    radial-gradient(2px 2px at 780px  60px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(2px 2px at 1100px 180px, rgba(255,255,255,0.75), transparent),
+    radial-gradient(2px 2px at 500px 450px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(2px 2px at 950px 520px, rgba(255,255,255,0.65), transparent),
+    radial-gradient(2.5px 2.5px at 150px 680px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(2px 2px at 700px 730px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(2px 2px at 1300px 600px, rgba(255,255,255,0.75), transparent);
+  background-size: 1440px 900px;
+  animation: twinkle-lg 10s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle-sm {
+  0%   { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@keyframes twinkle-md {
+  0%   { opacity: 0.6; }
+  100% { opacity: 0.9; }
+}
+
+@keyframes twinkle-lg {
+  0%   { opacity: 0.7; }
+  100% { opacity: 1; }
 }

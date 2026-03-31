@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import JobCard from '@/components/JobCard';
 
 export default function Home() {
@@ -8,12 +8,21 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [company, setCompany] = useState('microsoft'); // Default
+  const jobCache = useRef({}); // In-memory cache, cleared on page refresh
 
   useEffect(() => {
     fetchJobs(company);
   }, [company]);
 
   const fetchJobs = async (selectedCompany) => {
+    // Check cache first — if we already scraped this company, use cached data
+    if (jobCache.current[selectedCompany]) {
+      setJobs(jobCache.current[selectedCompany]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -22,7 +31,10 @@ export default function Home() {
         throw new Error('Failed to fetch jobs. Please try again later.');
       }
       const data = await res.json();
-      setJobs(data.data || []);
+      const fetchedJobs = data.data || [];
+      // Store in cache for this session
+      jobCache.current[selectedCompany] = fetchedJobs;
+      setJobs(fetchedJobs);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -31,19 +43,18 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#0a0a0a] to-[#0a0a0a] text-white selection:bg-indigo-500/30 font-sans">
+    <main className="min-h-screen bg-[#000000] text-white selection:bg-white/30 font-sans">
       
-      {/* Dynamic Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/10 blur-[120px]" />
-         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
-      </div>
+      {/* Starfield Background */}
+      <div className="starfield-sm" />
+      <div className="starfield-md" />
+      <div className="starfield-lg" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         
         {/* Header Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
+          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-500 text-shadow-glow">
             Career Radar
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto font-light leading-relaxed">
@@ -58,20 +69,20 @@ export default function Home() {
             
             {['Microsoft', 'Google', 'Amazon', 'Apple', 'Netflix'].map(c => {
                const id = c.toLowerCase();
-               return (
-                 <button 
-                  key={id}
-                  onClick={() => setCompany(id)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${company === id ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}
-                 >
-                  {c}
-                 </button>
-               );
+                return (
+                  <button 
+                   key={id}
+                   onClick={() => setCompany(id)}
+                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${company === id ? 'bg-white text-black shadow-lg shadow-white/20' : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'}`}
+                  >
+                   {c}
+                  </button>
+                );
             })}
           </div>
           
-          <div className="text-sm text-gray-400 mt-4 md:mt-0 font-medium">
-            Location: <span className="text-indigo-400">India</span> | Role: <span className="text-indigo-400">Software Engineering</span>
+          <div className="text-sm text-zinc-400 mt-4 md:mt-0 font-medium">
+            Location: <span className="text-white">India</span> | Role: <span className="text-white">Software Engineering</span>
           </div>
         </div>
 
@@ -79,8 +90,8 @@ export default function Home() {
         <div className="relative min-h-[400px]">
           {loading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4">
-              <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-              <p className="text-indigo-400 font-medium animate-pulse">Scraping latest opportunities...</p>
+              <div className="w-12 h-12 border-4 border-white/10 border-t-white rounded-full animate-spin"></div>
+              <p className="text-zinc-400 font-medium animate-pulse">Scraping latest opportunities...</p>
             </div>
           )}
           

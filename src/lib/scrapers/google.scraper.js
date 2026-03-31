@@ -3,7 +3,7 @@ import { BaseScraper } from './scraper.interface';
 
 export class GoogleScraper extends BaseScraper {
   async scrape() {
-    const url = 'https://www.google.com/about/careers/applications/jobs/results/?q="Software%20Engineering"&location=India';
+    const url = 'https://www.google.com/about/careers/applications/jobs/results?location=India&skills=cloud';
     
     const browser = await puppeteer.launch({ 
       headless: 'new',
@@ -28,48 +28,35 @@ export class GoogleScraper extends BaseScraper {
       
       jobs = await page.evaluate(() => {
         const results = [];
+        // Google Careers results are list items with class .lLd3Je
+        const cards = Array.from(document.querySelectorAll('.lLd3Je'));
         
-        // Google uses <a> elements that link to /jobs/results/
-        const links = Array.from(document.querySelectorAll('a'))
-            .filter(a => a.href.includes('/jobs/results/') && a.href !== window.location.href);
+        cards.forEach(card => {
+            const titleEl = card.querySelector('h3');
+            // The "Learn more" link usually has class .WpHeLc
+            const linkEl = card.querySelector('a.WpHeLc');
+            // Locations are often in a span with class .r0wTof
+            const locEl = card.querySelector('.r0wTof');
             
-        links.forEach(link => {
-            const rawText = link.innerText.trim();
-            // Expected format often includes title, company, locations, etc inside the block
-            // Title is usually an h2 or h3 inside
-            const titleEl = link.querySelector('h2, h3');
-            let title = titleEl ? titleEl.innerText.trim() : '';
-            
-            if (!title && rawText.includes('Software')) {
-                title = rawText.split('\n')[0]; // fallback
+            if (titleEl && linkEl) {
+                let href = linkEl.getAttribute('href') || '';
+                // Resolve relative URLs if necessary
+                if (href && !href.startsWith('http')) {
+                    href = 'https://www.google.com/about/careers/applications/' + href;
+                }
+
+                results.push({
+                    id: 'goog-' + Math.random().toString(36).substring(7),
+                    title: titleEl.innerText.trim(),
+                    company: 'Google',
+                    location: locEl ? locEl.innerText.trim() : 'India',
+                    descriptionSnippet: `Explore this position at Google.`,
+                    applyUrl: href
+                });
             }
-            if (!title) return;
-            
-            // Google jobs usually have location info inside styled spans
-            const locEl = link.querySelector('span[aria-label*="location"]');
-            let location = locEl ? locEl.innerText.trim() : 'India';
-            
-            results.push({
-                id: 'goog-' + Math.random().toString(36).substring(7),
-                title: title,
-                company: 'Google',
-                location: location,
-                descriptionSnippet: `Explore this Software Engineering position at Google in ${location}.`,
-                applyUrl: link.href
-            });
         });
         
-        // Dedup
-        const unique = [];
-        const seen = new Set();
-        for (const job of results) {
-            if (!seen.has(job.applyUrl)) {
-                seen.add(job.applyUrl);
-                unique.push(job);
-            }
-        }
-        
-        return unique.slice(0, 15);
+        return results.slice(0, 15);
       });
       
     } catch (error) {

@@ -4,7 +4,7 @@ import { BaseScraper } from './scraper.interface';
 export class MicrosoftScraper extends BaseScraper {
   async scrape() {
     // We use the apply portal search URL which renders jobs much more predictably
-    const url = 'https://apply.careers.microsoft.com/careers?hl=en&start=0&location=India&pid=1970393556633020&sort_by=distance&filter_include_remote=1&filter_profession=software+engineering';
+    const url = 'https://apply.careers.microsoft.com/careers?hl=en&location=India&filter_profession=software+engineering';
     
     const browser = await puppeteer.launch({ 
       headless: 'new',

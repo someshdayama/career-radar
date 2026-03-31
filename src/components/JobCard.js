@@ -2,15 +2,15 @@ import React from 'react';
 
 export default function JobCard({ job }) {
   return (
-    <div className="group relative rounded-2xl bg-white/5 backdrop-blur-lg border border-white/10 p-6 shadow-xl transition-all duration-300 hover:bg-white/10 hover:-translate-y-1 hover:shadow-indigo-500/20">
+    <div className="group relative rounded-2xl bg-white/5 backdrop-blur-lg border border-white/10 p-6 shadow-xl transition-all duration-300 hover:bg-white/10 hover:-translate-y-1 hover:shadow-white/5">
       
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="text-xl font-bold text-white mb-2">{job.title}</h3>
-          <p className="text-sm font-medium text-indigo-400">{job.company}</p>
+          <p className="text-sm font-medium text-zinc-400">{job.company}</p>
         </div>
         
-        <div className="bg-indigo-500/10 text-indigo-300 text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
+        <div className="bg-white/10 text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap border border-white/10">
           {job.location}
         </div>
       </div>
@@ -24,7 +24,7 @@ export default function JobCard({ job }) {
           href={job.applyUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-6 rounded-lg transition-colors group-hover:shadow-lg group-hover:shadow-indigo-500/30"
+          className="inline-flex items-center gap-2 bg-white hover:bg-zinc-200 text-black font-bold py-2 px-6 rounded-lg transition-all duration-300 group-hover:shadow-lg group-hover:shadow-white/20"
         >
           <span>Apply Now</span>
           <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

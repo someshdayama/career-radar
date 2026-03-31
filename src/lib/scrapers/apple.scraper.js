@@ -3,7 +3,7 @@ import { BaseScraper } from './scraper.interface';
 
 export class AppleScraper extends BaseScraper {
   async scrape() {
-    const url = 'https://jobs.apple.com/en-in/search?location=india-INDC&key=software%2520engineer';
+    const url = 'https://jobs.apple.com/en-in/search?location=india-INDC&key=software%20engineer';
     
     const browser = await puppeteer.launch({ 
       headless: 'new',
