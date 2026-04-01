@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[functions]
+  node_bundler = "esbuild"
+  # This tries to give the function maximum allowed execution time on free tier
+  external_node_modules = ["@sparticuz/chromium"]

@@ -16,6 +16,7 @@
  *   }
  */
 
+import puppeteerCore from 'puppeteer-core';
 import puppeteer from 'puppeteer';
 
 if (!globalThis.__browserManager) {
@@ -28,7 +29,6 @@ if (!globalThis.__browserManager) {
 
 const mgr = globalThis.__browserManager;
 
-const LAUNCH_ARGS = ['--no-sandbox', '--disable-setuid-sandbox'];
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
@@ -39,14 +39,33 @@ async function ensureBrowser() {
   if (mgr.launchPromise) {
     return mgr.launchPromise;
   }
-  mgr.launchPromise = puppeteer
-    .launch({ headless: 'new', args: LAUNCH_ARGS })
-    .then((b) => {
-      mgr.instance = b;
-      mgr.launchPromise = null;
-      console.log('[BrowserManager] Chromium launched (shared instance)');
-      return b;
-    });
+  
+  mgr.launchPromise = (async () => {
+    let b;
+    // Check if running on a serverless provider like Netlify or Vercel
+    if (process.env.NETLIFY || process.env.VERCEL_ENV || process.env.NODE_ENV === 'production') {
+      const chromium = require('@sparticuz/chromium');
+      b = await puppeteerCore.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
+      });
+      console.log('[BrowserManager] Serverless Chromium launched');
+    } else {
+      b = await puppeteer.launch({ 
+        headless: 'new', 
+        args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+      });
+      console.log('[BrowserManager] Local Chromium launched');
+    }
+    
+    mgr.instance = b;
+    mgr.launchPromise = null;
+    return b;
+  })();
+  
   return mgr.launchPromise;
 }
 
