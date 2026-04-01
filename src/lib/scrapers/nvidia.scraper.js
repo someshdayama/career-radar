@@ -18,8 +18,8 @@ export class NvidiaScraper extends BaseScraper {
       for (let pageNum = 0; pageNum < MAX_PAGES; pageNum++) {
         const start = pageNum * PAGE_SIZE;
         console.log(`[Nvidia] Page ${pageNum + 1} (start=${start})`);
-        await page.goto(buildUrl(start), { waitUntil: 'domcontentloaded', timeout: 8000 }).catch(() => {});
-        await page.waitForSelector('a[class*="card-"]', { timeout: 3000 }).catch(() => {});
+        await page.goto(buildUrl(start), { waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
+        await page.waitForSelector('a[class*="card-"]', { timeout: 8000 }).catch(() => {});
 
         const jobs = await page.evaluate(() => {
           const results = [];

@@ -15,9 +15,9 @@ export class MicrosoftScraper extends BaseScraper {
       for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
         const url = pageNum === 1 ? baseUrl : `${baseUrl}&page=${pageNum}`;
         console.log(`[Microsoft] Page ${pageNum}`);
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 8000 }).catch(() => {});
-        // Optional short wait for a elements, though evaluate handles failures gracefully
-        await page.waitForSelector('a[href*="/job"]', { timeout: 3000 }).catch(() => {});
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
+        // Expanded wait specifically for heavy SPA React/Angular loading on cold Vercel 
+        await page.waitForSelector('a[href*="/job"]', { timeout: 8000 }).catch(() => {});
 
         const jobs = await page.evaluate(() => {
           const results = [];
