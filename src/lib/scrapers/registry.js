@@ -2,14 +2,14 @@ import { MicrosoftScraper } from './microsoft.scraper';
 import { GoogleScraper } from './google.scraper';
 import { AmazonScraper } from './amazon.scraper';
 import { AppleScraper } from './apple.scraper';
-import { NetflixScraper } from './netflix.scraper';
+import { NvidiaScraper } from './nvidia.scraper';
 
 const scrapers = {
   microsoft: new MicrosoftScraper(),
   google: new GoogleScraper(),
   amazon: new AmazonScraper(),
   apple: new AppleScraper(),
-  netflix: new NetflixScraper(),
+  nvidia: new NvidiaScraper(),
 };
 
 /**

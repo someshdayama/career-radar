@@ -1,70 +1,56 @@
-import puppeteer from 'puppeteer';
+import { acquireBrowser } from '@/lib/browser-manager';
 import { BaseScraper } from './scraper.interface';
+
+const MAX_PAGES = 3;
 
 export class GoogleScraper extends BaseScraper {
   async scrape() {
-    const url = 'https://www.google.com/about/careers/applications/jobs/results?location=India&skills=cloud';
-    
-    const browser = await puppeteer.launch({ 
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    
-    let jobs = [];
-    
-    try {
-      const page = await browser.newPage();
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-      
-      await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
-      
-      await new Promise(r => setTimeout(r, 6000));
-      
-      // Scroll to trigger lazy loading
-      await page.evaluate(async () => {
-          window.scrollBy(0, 500);
-          await new Promise(r => setTimeout(r, 1000));
-      });
-      
-      jobs = await page.evaluate(() => {
-        const results = [];
-        // Google Careers results are list items with class .lLd3Je
-        const cards = Array.from(document.querySelectorAll('.lLd3Je'));
-        
-        cards.forEach(card => {
-            const titleEl = card.querySelector('h3');
-            // The "Learn more" link usually has class .WpHeLc
-            const linkEl = card.querySelector('a.WpHeLc');
-            // Locations are often in a span with class .r0wTof
-            const locEl = card.querySelector('.r0wTof');
-            
-            if (titleEl && linkEl) {
-                let href = linkEl.getAttribute('href') || '';
-                // Resolve relative URLs if necessary
-                if (href && !href.startsWith('http')) {
-                    href = 'https://www.google.com/about/careers/applications/' + href;
-                }
+    const baseUrl = 'https://www.google.com/about/careers/applications/jobs/results?location=India&skills=cloud';
+    const { page, release } = await acquireBrowser();
+    let allJobs = [];
+    const seen = new Set();
 
-                results.push({
-                    id: 'goog-' + Math.random().toString(36).substring(7),
-                    title: titleEl.innerText.trim(),
-                    company: 'Google',
-                    location: locEl ? locEl.innerText.trim() : 'India',
-                    descriptionSnippet: `Explore this position at Google.`,
-                    applyUrl: href
-                });
-            }
+    try {
+      for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
+        const url = pageNum === 1 ? baseUrl : `${baseUrl}&page=${pageNum}`;
+        console.log(`[Google] Page ${pageNum}`);
+        await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
+        await new Promise(r => setTimeout(r, 5000));
+        await page.evaluate(async () => { window.scrollBy(0, 500); await new Promise(r => setTimeout(r, 1000)); });
+
+        const jobs = await page.evaluate(() => {
+          const results = [];
+          document.querySelectorAll('.lLd3Je').forEach(card => {
+            const titleEl = card.querySelector('h3');
+            const linkEl = card.querySelector('a.WpHeLc');
+            const locEl = card.querySelector('.r0wTof');
+            if (!titleEl || !linkEl) return;
+            let href = linkEl.getAttribute('href') || '';
+            if (href && !href.startsWith('http')) href = 'https://www.google.com/about/careers/applications/' + href;
+            const id = href.split('/').pop() || Math.random().toString(36).substring(7);
+            results.push({
+              id: 'goog-' + id,
+              title: titleEl.innerText.trim(),
+              company: 'Google',
+              location: locEl ? locEl.innerText.trim() : 'India',
+              descriptionSnippet: 'Explore this position at Google.',
+              applyUrl: href,
+            });
+          });
+          return results;
         });
-        
-        return results.slice(0, 15);
-      });
-      
-    } catch (error) {
-      console.error('Puppeteer scraping error on Google:', error);
+
+        let newFound = 0;
+        for (const job of jobs) {
+          if (!seen.has(job.id)) { seen.add(job.id); allJobs.push(job); newFound++; }
+        }
+        if (newFound === 0) break;
+      }
+    } catch (err) {
+      console.error('[Google] Scrape error:', err.message);
     } finally {
-      await browser.close();
+      await release();
     }
-    
-    return jobs;
+    return allJobs;
   }
 }
