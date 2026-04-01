@@ -1,7 +1,8 @@
 import { acquireBrowser } from '@/lib/browser-manager';
 import { BaseScraper } from './scraper.interface';
 
-const MAX_PAGES = 3;
+// Limit pagination on Netlify free tier to prevent 10s execution timeout
+const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class MicrosoftScraper extends BaseScraper {
   async scrape() {
@@ -14,7 +15,9 @@ export class MicrosoftScraper extends BaseScraper {
       for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
         const url = pageNum === 1 ? baseUrl : `${baseUrl}&page=${pageNum}`;
         console.log(`[Microsoft] Page ${pageNum}`);
-        await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 8000 }).catch(() => {});
+        // Optional short wait for a elements, though evaluate handles failures gracefully
+        await page.waitForSelector('a[href*="/job"]', { timeout: 3000 }).catch(() => {});
 
         const jobs = await page.evaluate(() => {
           const results = [];

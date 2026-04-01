@@ -1,7 +1,8 @@
 import { acquireBrowser } from '@/lib/browser-manager';
 import { BaseScraper } from './scraper.interface';
 
-const MAX_PAGES = 3;
+// Limit pagination on Netlify free tier to prevent 10s execution timeout
+const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class AmazonScraper extends BaseScraper {
   async scrape() {
@@ -14,8 +15,8 @@ export class AmazonScraper extends BaseScraper {
       for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
         const url = pageNum === 1 ? baseUrl : `${baseUrl}&page=${pageNum}`;
         console.log(`[Amazon] Page ${pageNum}`);
-        await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
-        await new Promise(r => setTimeout(r, 5000));
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 8000 }).catch(() => {});
+        await page.waitForSelector('.job-tile, .job, article, div[data-job-id]', { timeout: 3000 }).catch(() => {});
 
         const jobs = await page.evaluate(() => {
           const results = [];

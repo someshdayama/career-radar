@@ -2,7 +2,8 @@ import { acquireBrowser } from '@/lib/browser-manager';
 import { BaseScraper } from './scraper.interface';
 
 const PAGE_SIZE = 10;
-const MAX_PAGES = 3;
+// Limit pagination on Netlify free tier to prevent 10s execution timeout
+const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class NvidiaScraper extends BaseScraper {
   async scrape() {
@@ -17,8 +18,8 @@ export class NvidiaScraper extends BaseScraper {
       for (let pageNum = 0; pageNum < MAX_PAGES; pageNum++) {
         const start = pageNum * PAGE_SIZE;
         console.log(`[Nvidia] Page ${pageNum + 1} (start=${start})`);
-        await page.goto(buildUrl(start), { waitUntil: 'networkidle0', timeout: 45000 });
-        await new Promise(r => setTimeout(r, 5000));
+        await page.goto(buildUrl(start), { waitUntil: 'domcontentloaded', timeout: 8000 }).catch(() => {});
+        await page.waitForSelector('a[class*="card-"]', { timeout: 3000 }).catch(() => {});
 
         const jobs = await page.evaluate(() => {
           const results = [];

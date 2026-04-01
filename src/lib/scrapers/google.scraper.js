@@ -1,7 +1,8 @@
 import { acquireBrowser } from '@/lib/browser-manager';
 import { BaseScraper } from './scraper.interface';
 
-const MAX_PAGES = 3;
+// Limit pagination on Netlify free tier to prevent 10s execution timeout
+const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class GoogleScraper extends BaseScraper {
   async scrape() {
@@ -14,9 +15,9 @@ export class GoogleScraper extends BaseScraper {
       for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
         const url = pageNum === 1 ? baseUrl : `${baseUrl}&page=${pageNum}`;
         console.log(`[Google] Page ${pageNum}`);
-        await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
-        await new Promise(r => setTimeout(r, 5000));
-        await page.evaluate(async () => { window.scrollBy(0, 500); await new Promise(r => setTimeout(r, 1000)); });
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 8000 }).catch(() => {});
+        await page.waitForSelector('.lLd3Je', { timeout: 3000 }).catch(() => {});
+        await page.evaluate(() => window.scrollBy(0, 500));
 
         const jobs = await page.evaluate(() => {
           const results = [];
