@@ -2,7 +2,7 @@ import { getScraper, getSupportedCompanies } from '@/lib/scrapers/registry';
 import { getCachedJobs, setCachedJobs, getCacheAge } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 10; // Max allowed for Netlify free tier serverless function
+export const maxDuration = 60; // Max allowed for Vercel free tier (Hobby)
 
 // Next.js streaming endpoint using Server-Sent Events (SSE).
 // All scrapers run in PARALLEL sharing a single Chromium instance.

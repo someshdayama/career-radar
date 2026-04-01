@@ -16,6 +16,7 @@
  *   }
  */
 
+import puppeteerCore from 'puppeteer-core';
 import puppeteer from 'puppeteer';
 
 if (!globalThis.__browserManager) {
@@ -39,17 +40,33 @@ async function ensureBrowser() {
     return mgr.launchPromise;
   }
   
-  mgr.launchPromise = puppeteer
-    .launch({ 
-      headless: 'new', 
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
-    })
-    .then((b) => {
-      mgr.instance = b;
-      mgr.launchPromise = null;
-      console.log('[BrowserManager] Standard Chromium launched');
-      return b;
-    });
+  mgr.launchPromise = (async () => {
+    let b;
+    // Check if running on Vercel specifically
+    if (process.env.VERCEL_ENV || process.env.NODE_ENV === 'production') {
+      // Use dynamic require instead of import since it's an external CommonJS package
+      const chromium = require('@sparticuz/chromium');
+      
+      b = await puppeteerCore.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
+      });
+      console.log('[BrowserManager] Vercel Serverless Chromium launched');
+    } else {
+      b = await puppeteer.launch({ 
+        headless: 'new', 
+        args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+      });
+      console.log('[BrowserManager] Local Standard Chromium launched');
+    }
+    
+    mgr.instance = b;
+    mgr.launchPromise = null;
+    return b;
+  })();
   
   return mgr.launchPromise;
 }
