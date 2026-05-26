@@ -123,3 +123,28 @@ body {
   0%   { opacity: 0.7; }
   100% { opacity: 1; }
 }
+
+/* Toast pop animation for "Copied!" tooltip */
+@keyframes toastPop {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(4px) scale(0.9); }
+  20%  { opacity: 1; transform: translateX(-50%) translateY(0)   scale(1); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.toast-pop {
+  animation: toastPop 2s ease forwards;
+}
+
+/* NEW badge subtle pulse */
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(52, 211, 153, 0);  }
+}
+.badge-new {
+  animation: badgePulse 2.5s ease-in-out infinite;
+}
+
+/* Hide scrollbar on company tab strip */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+

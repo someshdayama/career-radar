@@ -6,10 +6,10 @@ import { NvidiaScraper } from './nvidia.scraper';
 
 const scrapers = {
   microsoft: new MicrosoftScraper(),
-  google: new GoogleScraper(),
-  amazon: new AmazonScraper(),
-  apple: new AppleScraper(),
-  nvidia: new NvidiaScraper(),
+  google:    new GoogleScraper(),
+  amazon:    new AmazonScraper(),
+  apple:     new AppleScraper(),
+  nvidia:    new NvidiaScraper(),
 };
 
 /**
@@ -25,5 +25,5 @@ export function getScraper(companyId) {
  * Returns a list of supported companies
  */
 export function getSupportedCompanies() {
-    return Object.keys(scrapers);
+  return Object.keys(scrapers);
 }

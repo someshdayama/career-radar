@@ -1,72 +1,55 @@
-import puppeteer from 'puppeteer';
+import { acquireBrowser } from '@/lib/browser-manager';
 import { BaseScraper } from './scraper.interface';
 
 export class NetflixScraper extends BaseScraper {
   async scrape() {
     const url = 'https://jobs.netflix.com/search?q=Software%20Engineer&location=India';
-    
-    const browser = await puppeteer.launch({ 
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    
+    const { page, release } = await acquireBrowser();
     let jobs = [];
-    
+
     try {
-      const page = await browser.newPage();
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-      
-      await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
-      
-      await new Promise(r => setTimeout(r, 6000));
-      
+      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {});
+      await page.waitForSelector('a[href*="/jobs/"]', { timeout: 10000 }).catch(() => {});
+      // Extra wait for React hydration
+      await new Promise(r => setTimeout(r, 3000));
+
       jobs = await page.evaluate(() => {
         const results = [];
-        
-        // Netflix uses mostly <a> tags to /jobs/ internally
-        const links = Array.from(document.querySelectorAll('a'))
-            .filter(a => a.href.includes('/jobs/') && !a.href.includes('/search'));
-            
-        links.forEach(link => {
-            const rawText = link.innerText.trim();
-            if (rawText.length < 5) return;
-            
-            // Look for h3 or h2 title
-            const titleEl = link.querySelector('h3, h2, h4') || link;
-            const title = titleEl.innerText.trim() || 'Software Engineer';
-            
-            // Netflix often lists location next to it in spans
-            const locSpans = Array.from(link.querySelectorAll('span, div')).filter(el => el.innerText.includes('India'));
-            const location = locSpans.length > 0 ? locSpans[0].innerText.trim() : 'India';
-            
-            results.push({
-                id: 'nflx-' + Math.random().toString(36).substring(7),
-                title: title,
-                company: 'Netflix',
-                location: location,
-                descriptionSnippet: `Join Netflix. Apply for ${title} located in ${location}.`,
-                applyUrl: link.href
-            });
-        });
-        
-        const unique = [];
         const seen = new Set();
-        for (const job of results) {
-            if (!seen.has(job.applyUrl)) {
-                seen.add(job.applyUrl);
-                unique.push(job);
-            }
-        }
-        
-        return unique.slice(0, 15);
+        const links = Array.from(document.querySelectorAll('a'))
+          .filter(a => a.href.includes('/jobs/') && !a.href.includes('/search'));
+
+        links.forEach(link => {
+          const rawText = link.innerText.trim();
+          if (rawText.length < 5) return;
+          if (seen.has(link.href)) return;
+          seen.add(link.href);
+
+          const titleEl = link.querySelector('h3, h2, h4') || link;
+          const title = titleEl.innerText.split('\n')[0].trim() || 'Software Engineer';
+          const locSpans = Array.from(link.querySelectorAll('span, div'))
+            .filter(el => el.innerText.toLowerCase().includes('india'));
+          const location = locSpans.length > 0 ? locSpans[0].innerText.trim() : 'India';
+          const urlId = link.href.split('/jobs/')[1]?.split('?')[0] || Math.random().toString(36).substring(7);
+
+          results.push({
+            id: 'nflx-' + urlId,
+            title,
+            company: 'Netflix',
+            location,
+            descriptionSnippet: `Join Netflix engineering. ${title} opportunity in ${location}.`,
+            applyUrl: link.href,
+          });
+        });
+
+        return results.slice(0, 20);
       });
-      
-    } catch (error) {
-      console.error('Puppeteer scraping error on Netflix:', error);
+    } catch (err) {
+      console.error('[Netflix] Scrape error:', err.message);
     } finally {
-      await browser.close();
+      await release();
     }
-    
+
     return jobs;
   }
 }

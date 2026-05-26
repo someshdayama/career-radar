@@ -6,7 +6,8 @@ const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class GoogleScraper extends BaseScraper {
   async scrape() {
-    const baseUrl = 'https://www.google.com/about/careers/applications/jobs/results?location=India&skills=cloud';
+    // Targeting DevOps, Cloud, SRE roles in India
+    const baseUrl = 'https://www.google.com/about/careers/applications/jobs/results?location=India&skills=cloud,devops,kubernetes,terraform,site+reliability';
     const { page, release } = await acquireBrowser();
     let allJobs = [];
     const seen = new Set();

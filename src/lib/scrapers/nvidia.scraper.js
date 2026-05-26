@@ -7,8 +7,9 @@ const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class NvidiaScraper extends BaseScraper {
   async scrape() {
+    // Targeting DevOps, Cloud, SRE, Program/Release Manager roles in India
     const buildUrl = (start) =>
-      `https://jobs.nvidia.com/careers?start=${start}&location=india&pid=893394115595&sort_by=distance&filter_include_remote=1&filter_job_category=engineering%2Cprogram+manager%2Cit+-+information+technology`;
+      `https://jobs.nvidia.com/careers?start=${start}&location=india&sort_by=distance&filter_include_remote=1&filter_job_category=engineering%2Cprogram+manager%2Cit+-+information+technology&q=devops+OR+cloud+OR+SRE+OR+release+engineer+OR+infrastructure`;
 
     const { page, release } = await acquireBrowser();
     let allJobs = [];

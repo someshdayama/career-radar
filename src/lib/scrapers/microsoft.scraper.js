@@ -6,7 +6,8 @@ const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class MicrosoftScraper extends BaseScraper {
   async scrape() {
-    const baseUrl = 'https://apply.careers.microsoft.com/careers?hl=en&location=India&filter_profession=software+engineering';
+    // Targeting DevOps, Cloud, SRE, Release Engineering roles in India
+    const baseUrl = 'https://jobs.careers.microsoft.com/global/en/search?q=devops+OR+cloud+engineer+OR+site+reliability+OR+release+engineer&lc=India&l=en_us&pg=1&pgSz=20&o=Relevance';
     const { page, release } = await acquireBrowser();
     let allJobs = [];
     const seen = new Set();

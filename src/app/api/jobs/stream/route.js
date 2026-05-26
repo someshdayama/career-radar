@@ -2,7 +2,23 @@ import { getScraper, getSupportedCompanies } from '@/lib/scrapers/registry';
 import { getCachedJobs, setCachedJobs, getCacheAge } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // Max allowed for Vercel free tier (Hobby)
+export const maxDuration = 60;
+
+// Helper: scrape one company with a single automatic retry on failure
+async function scrapeWithRetry(companyId, attempt = 1) {
+  const scraper = getScraper(companyId);
+  if (!scraper) return { data: [], error: 'Scraper not found' };
+  try {
+    const data = await scraper.scrape();
+    return { data: data || [] };
+  } catch (err) {
+    if (attempt < 2) {
+      console.warn(`[Stream] Retrying ${companyId} (attempt ${attempt + 1})...`);
+      return scrapeWithRetry(companyId, attempt + 1);
+    }
+    return { data: [], error: err.message };
+  }
+}
 
 // Next.js streaming endpoint using Server-Sent Events (SSE).
 // All scrapers run in PARALLEL sharing a single Chromium instance.
@@ -46,19 +62,15 @@ export async function GET() {
       };
 
       const promises = companies.map(async (c) => {
-        try {
-          const scraper = getScraper(c);
-          if (!scraper) { send({ company: c, data: [], error: 'Scraper not found' }); return; }
-          console.log(`[Stream] Scraping ${c}...`);
-          const data = await scraper.scrape();
+        console.log(`[Stream] Scraping ${c}...`);
+        const { data, error } = await scrapeWithRetry(c);
+        if (error) {
+          console.error(`[Stream] Failed ${c}: ${error}`);
+        } else {
           console.log(`[Stream] Done: ${c} — ${data.length} jobs`);
-          freshData[c] = data || [];
-          send({ company: c, data: data || [] });
-        } catch (err) {
-          console.error(`[Stream] Error scraping ${c}:`, err.message);
-          freshData[c] = [];
-          send({ company: c, data: [], error: err.message });
         }
+        freshData[c] = data;
+        send({ company: c, data, ...(error ? { error } : {}) });
       });
 
       await Promise.allSettled(promises);
