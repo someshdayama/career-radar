@@ -1,3 +1,4 @@
+import { LinkedinScraper } from './linkedin.scraper';
 import { MicrosoftScraper } from './microsoft.scraper';
 import { GoogleScraper } from './google.scraper';
 import { AmazonScraper } from './amazon.scraper';
@@ -5,6 +6,7 @@ import { AppleScraper } from './apple.scraper';
 import { NvidiaScraper } from './nvidia.scraper';
 
 const scrapers = {
+  linkedin:  new LinkedinScraper(),
   microsoft: new MicrosoftScraper(),
   google:    new GoogleScraper(),
   amazon:    new AmazonScraper(),

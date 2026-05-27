@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import JobCard from '@/components/JobCard';
 
-const COMPANIES = ['microsoft', 'google', 'amazon', 'apple', 'nvidia'];
+const COMPANIES = ['linkedin', 'microsoft', 'google', 'amazon', 'apple', 'nvidia'];
 
 const COMPANY_META = {
+  linkedin:  { label: 'LinkedIn',  color: '#0a66c2' },
   microsoft: { label: 'Microsoft', color: '#00a4ef' },
   google:    { label: 'Google',    color: '#4285f4' },
   amazon:    { label: 'Amazon',    color: '#ff9900' },
@@ -43,7 +44,7 @@ export default function Home() {
   const [allJobs, setAllJobs]                   = useState({});
   const [companyErrors, setCompanyErrors]        = useState({});
   const [loadingCompanies, setLoadingCompanies]  = useState(new Set(COMPANIES));
-  const [company, setCompany]                    = useState('microsoft');
+  const [company, setCompany]                    = useState('linkedin');
   const [isMounted, setIsMounted]               = useState(false);
   const [showBookmarks, setShowBookmarks]        = useState(false);
   const [bookmarks, setBookmarks]                = useState({});
@@ -52,56 +53,10 @@ export default function Home() {
   const [seenIds, setSeenIds]                    = useState(new Set());
   const [locationFilter, setLocationFilter]      = useState('India'); // New improvement: Location Toggle
 
-  // Filter & sort state
   const [search, setSearch]                      = useState('');
   const [sortBy, setSortBy]                      = useState('default');
 
   const fetchStarted = useRef(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    setBookmarks(getSavedBookmarks());
-    setSeenIds(getSeenJobIds());
-
-    const syncBookmarks = () => setBookmarks(getSavedBookmarks());
-    window.addEventListener('storage', syncBookmarks);
-
-    if (!fetchStarted.current) {
-      fetchStarted.current = true;
-      startStreaming();
-    }
-    return () => window.removeEventListener('storage', syncBookmarks);
-  }, []);
-
-  // Sync bookmarks from JobCard toggles
-  useEffect(() => {
-    if (!isMounted) return;
-    const interval = setInterval(() => setBookmarks(getSavedBookmarks()), 1000);
-    return () => clearInterval(interval);
-  }, [isMounted]);
-
-  // Keyboard ← → to switch company tabs
-  useEffect(() => {
-    if (!isMounted) return;
-    const handleKey = (e) => {
-      if (e.target.tagName === 'INPUT') return;
-      if (e.key === 'ArrowRight') {
-        setShowBookmarks(false);
-        setCompany(prev => {
-          const idx = COMPANIES.indexOf(prev);
-          return COMPANIES[(idx + 1) % COMPANIES.length];
-        });
-      } else if (e.key === 'ArrowLeft') {
-        setShowBookmarks(false);
-        setCompany(prev => {
-          const idx = COMPANIES.indexOf(prev);
-          return COMPANIES[(idx - 1 + COMPANIES.length) % COMPANIES.length];
-        });
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [isMounted]);
 
   const startStreaming = useCallback(() => {
     setAllJobs({});
@@ -109,9 +64,6 @@ export default function Home() {
     setLoadingCompanies(new Set(COMPANIES));
     setFromCache(false);
     setCacheAge(null);
-
-    // Snapshot seen IDs before this scrape so new ones show "NEW"
-    const previouslySeen = getSeenJobIds();
 
     fetch('/api/jobs/stream')
       .then((res) => {
@@ -156,10 +108,55 @@ export default function Home() {
 
         return pump();
       })
-      .catch((err) => {
+      .catch(() => {
         setLoadingCompanies(new Set());
       });
   }, []);
+
+  useEffect(() => {
+    setIsMounted(true);
+    setBookmarks(getSavedBookmarks());
+    setSeenIds(getSeenJobIds());
+
+    const syncBookmarks = () => setBookmarks(getSavedBookmarks());
+    window.addEventListener('storage', syncBookmarks);
+
+    if (!fetchStarted.current) {
+      fetchStarted.current = true;
+      startStreaming();
+    }
+    return () => window.removeEventListener('storage', syncBookmarks);
+  }, [startStreaming]);
+
+  // Sync bookmarks from JobCard toggles
+  useEffect(() => {
+    if (!isMounted) return;
+    const interval = setInterval(() => setBookmarks(getSavedBookmarks()), 1000);
+    return () => clearInterval(interval);
+  }, [isMounted]);
+
+  // Keyboard ← → to switch company tabs
+  useEffect(() => {
+    if (!isMounted) return;
+    const handleKey = (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.key === 'ArrowRight') {
+        setShowBookmarks(false);
+        setCompany(prev => {
+          const idx = COMPANIES.indexOf(prev);
+          return COMPANIES[(idx + 1) % COMPANIES.length];
+        });
+      } else if (e.key === 'ArrowLeft') {
+        setShowBookmarks(false);
+        setCompany(prev => {
+          const idx = COMPANIES.indexOf(prev);
+          return COMPANIES[(idx - 1 + COMPANIES.length) % COMPANIES.length];
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isMounted]);
 
   const isAllDone          = loadingCompanies.size === 0;
   const completedCount     = COMPANIES.length - loadingCompanies.size;

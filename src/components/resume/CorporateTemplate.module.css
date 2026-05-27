@@ -1,0 +1,218 @@
+/* ── Executive / Corporate Ivy League Template ──
+   Refined centered single-column layout typical of elite finance & consulting firms.
+   Uses Lora serif for names/headers and Inter for body text.
+*/
+
+.page {
+  width: 100%;
+  padding: 28px 36px;
+  margin: 0 auto;
+  background: white;
+  color: #1e293b;
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+}
+
+/* ── Header ── */
+.header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.nameRow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.name {
+  font-family: var(--resume-font, 'Lora', serif);
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.contactBlock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  padding: 0.4rem 0;
+  width: 100%;
+}
+
+.contactBlock div {
+  display: inline-flex;
+  align-items: center;
+}
+
+.contactBlock a {
+  color: var(--resume-accent, #0f172a);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.contactBlock a:hover {
+  text-decoration: underline;
+}
+
+/* ── Sections ── */
+.section {
+  margin-bottom: 1.25rem;
+}
+
+.sectionTitle {
+  font-family: var(--resume-font, 'Lora', serif);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--resume-accent, #0f172a);
+  border-bottom: 1.5px solid #0f172a;
+  padding-bottom: 0.2rem;
+  margin: 0 0 0.75rem;
+}
+
+.summary {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #334155;
+  margin: 0;
+  text-align: justify;
+}
+
+/* ── Experience ── */
+.job {
+  margin-bottom: 0.95rem;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.jobHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.05rem;
+  gap: 0.5rem;
+}
+
+.jobTitle {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.jobDate {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.company {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--resume-accent, #475569);
+  margin-bottom: 0.35rem;
+}
+
+.bulletList {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.bulletList li {
+  position: relative;
+  padding-left: 1.1rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #334155;
+  text-align: justify;
+}
+
+.bulletList li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  color: var(--resume-accent, #0f172a);
+  font-size: 0.85rem;
+}
+
+/* ── Education ── */
+.eduItem {
+  margin-bottom: 0.5rem;
+  page-break-inside: avoid;
+}
+
+.eduHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.degree {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.eduDate {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.institution {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #475569;
+}
+
+/* ── Skills ── */
+.skillsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.3rem 1.5rem;
+  font-size: 0.8rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.skillItem::before {
+  content: '▪ ';
+  color: var(--resume-accent, #0f172a);
+  font-size: 0.6rem;
+  vertical-align: middle;
+}
+
+@media print {
+  .page {
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: 210mm !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
