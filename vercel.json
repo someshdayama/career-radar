@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "src/app/api/jobs/stream/route.js": {
+      "includeFiles": "node_modules/@sparticuz/chromium/bin/**"
+    },
+    "src/app/api/recruiters/search/route.ts": {
+      "includeFiles": "node_modules/@sparticuz/chromium/bin/**"
+    }
+  }
+}
