@@ -40,8 +40,9 @@ export default function PromptInput({ onDataGenerated, onLoading, jobContext }: 
       }
 
       onDataGenerated(json.data);
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setError(message);
     } finally {
       setIsLoading(false);
       onLoading?.(false);

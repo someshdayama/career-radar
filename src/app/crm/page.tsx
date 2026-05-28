@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Plus, Calendar, Check, Trash2, Edit2, Mail, Linkedin, Clock, ArrowLeft, CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { Plus, Calendar, Check, Trash2, Edit2, Mail, Linkedin, Clock, ArrowLeft, X } from 'lucide-react';
 import Link from 'next/link';
 
 const CRM_KEY = 'career-radar-crm';
@@ -56,12 +56,7 @@ export default function CRMPage() {
     thankYouSent: false,
   });
 
-  // Load contacts on mount
-  useEffect(() => {
-    loadContacts();
-  }, []);
-
-  const loadContacts = () => {
+  function loadContacts() {
     if (typeof window === 'undefined') return;
     try {
       const data = JSON.parse(localStorage.getItem(CRM_KEY) || '{}');
@@ -69,12 +64,17 @@ export default function CRMPage() {
     } catch (e) {
       console.error('Failed to load CRM contacts:', e);
     }
-  };
+  }
 
-  const saveContactsObj = (contactsObj: Record<string, CRMContact>) => {
+  function saveContactsObj(contactsObj: Record<string, CRMContact>) {
     localStorage.setItem(CRM_KEY, JSON.stringify(contactsObj));
     loadContacts();
-  };
+  }
+
+  // Load contacts on mount
+  useEffect(() => {
+    setTimeout(loadContacts, 0);
+  }, []);
 
   const openAddModal = () => {
     setFormName('');
@@ -443,7 +443,7 @@ export default function CRMPage() {
                     {/* Notes preview */}
                     {contact.notes && (
                       <p className="text-zinc-500 text-xs italic line-clamp-2 border-l border-white/10 pl-2 py-0.5 mb-4">
-                        "{contact.notes}"
+                        &quot;{contact.notes}&quot;
                       </p>
                     )}
                   </div>

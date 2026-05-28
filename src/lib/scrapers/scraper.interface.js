@@ -17,7 +17,7 @@ export class BaseScraper {
    * @param {Object} filters - Search filters (e.g., location, role)
    * @returns {Promise<JobListing[]>}
    */
-  async scrape(filters = {}) {
+  async scrape() {
     throw new Error('Method "scrape()" must be implemented.');
   }
 }

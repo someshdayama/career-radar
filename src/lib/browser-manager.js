@@ -44,8 +44,7 @@ async function ensureBrowser() {
     let b;
     // Check if running on Vercel specifically
     if (process.env.VERCEL_ENV || process.env.NODE_ENV === 'production') {
-      // Use dynamic require instead of import since it's an external CommonJS package
-      const chromium = require('@sparticuz/chromium');
+      const chromium = await import('@sparticuz/chromium');
       
       b = await puppeteerCore.launch({
         args: chromium.args,
@@ -85,14 +84,14 @@ export async function acquireBrowser() {
   const release = async () => {
     try {
       if (!page.isClosed()) await page.close();
-    } catch (_) {}
+    } catch {}
     mgr.refCount -= 1;
     if (mgr.refCount <= 0) {
       mgr.refCount = 0;
       if (mgr.instance) {
         try {
           await mgr.instance.close();
-        } catch (_) {}
+        } catch {}
         mgr.instance = null;
         console.log('[BrowserManager] Chromium closed (all scrapers done)');
       }

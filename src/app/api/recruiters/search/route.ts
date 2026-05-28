@@ -51,7 +51,12 @@ export async function GET(req: Request) {
     await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
     // Wait for Bing search results to load
-    await page.waitForSelector('li.b_algo', { timeout: 8000 });
+    try {
+      await page.waitForSelector('li.b_algo', { timeout: 8000 });
+    } catch {
+      console.log(`[Recruiter Search] No results found or timeout for company ${company} (location: ${location})`);
+      return NextResponse.json({ recruiters: [] });
+    }
 
     const rawResults = await page.evaluate(() => {
       const elements = Array.from(document.querySelectorAll('li.b_algo'));
@@ -140,11 +145,12 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ recruiters: validatedRecruiters });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Recruiter validated search error:', error);
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ 
       error: 'Failed to search recruiters automatically', 
-      details: error.message 
+      details: message 
     }, { status: 500 });
   } finally {
     if (release) await release();

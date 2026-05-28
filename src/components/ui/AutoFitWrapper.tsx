@@ -5,7 +5,7 @@ import styles from "./AutoFitWrapper.module.css";
 
 interface AutoFitWrapperProps {
   children: React.ReactNode;
-  contentDependencies: any[];
+  contentDependencies: unknown[];
   fitToSinglePage?: boolean;
   onZoomChange?: (zoom: number) => void;
 }
@@ -90,6 +90,7 @@ export default function AutoFitWrapper({
       clearTimeout(timeoutId);
       window.removeEventListener("resize", calculateZoom);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...contentDependencies, fitToSinglePage, calculateZoom]);
 
   return (

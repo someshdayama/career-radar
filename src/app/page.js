@@ -114,16 +114,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    setIsMounted(true);
-    setBookmarks(getSavedBookmarks());
-    setSeenIds(getSeenJobIds());
+    setTimeout(() => {
+      setIsMounted(true);
+      setBookmarks(getSavedBookmarks());
+      setSeenIds(getSeenJobIds());
+    }, 0);
 
     const syncBookmarks = () => setBookmarks(getSavedBookmarks());
     window.addEventListener('storage', syncBookmarks);
 
     if (!fetchStarted.current) {
       fetchStarted.current = true;
-      startStreaming();
+      setTimeout(startStreaming, 0);
     }
     return () => window.removeEventListener('storage', syncBookmarks);
   }, [startStreaming]);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Link2, Plus, Check, Trash2, Calendar, FileText, Loader2 } from 'lucide-react';
+import { Users, Check, Trash2, Calendar, FileText, Loader2 } from 'lucide-react';
 
 const STORAGE_KEY = 'career-radar-bookmarks';
 const RESUME_KEY = 'career-radar-resumes';

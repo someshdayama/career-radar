@@ -115,7 +115,10 @@ function HomeContent() {
 
     if (!jobTitle || !company) return;
 
-    setJobBanner({ title: jobTitle, company });
+    setTimeout(() => {
+      setJobBanner({ title: jobTitle, company });
+      setIsGenerating(true);
+    }, 0);
 
     const jobContext = { title: jobTitle, company, location: location || "India", description: description || "" };
 
@@ -126,8 +129,6 @@ I am applying for the role of ${jobTitle} at ${company} (${location || "India"})
 ${description ? `Role context: ${description}` : ""}
 
 Please tailor my resume summary and skill highlights to this specific role while keeping all information truthful and based only on my actual background above.`;
-
-    setIsGenerating(true);
 
     fetch("/api/generate", {
       method: "POST",
@@ -140,7 +141,7 @@ Please tailor my resume summary and skill highlights to this specific role while
       })
       .catch(console.error)
       .finally(() => setIsGenerating(false));
-  }, []); // Run once on mount
+  }, [searchParams]); // Run when searchParams change
 
   const TemplateComponent = TEMPLATES[template] || MinimalistTemplate;
 
