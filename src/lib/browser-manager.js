@@ -44,7 +44,8 @@ async function ensureBrowser() {
     let b;
     // Check if running on Vercel specifically
     if (process.env.VERCEL_ENV || process.env.NODE_ENV === 'production') {
-      const chromium = await import('@sparticuz/chromium');
+      const chromiumModule = await import('@sparticuz/chromium');
+      const chromium = chromiumModule.default || chromiumModule;
       
       b = await puppeteerCore.launch({
         args: chromium.args,
