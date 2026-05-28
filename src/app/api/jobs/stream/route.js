@@ -1,5 +1,5 @@
 import { getScraper, getSupportedCompanies } from '@/lib/scrapers/registry';
-import { getCachedJobs, setCachedJobs, getCacheAge } from '@/lib/cache';
+import { getCachedJobs, setCachedJobs, getCacheAge, isCacheInFlight, markCacheInFlight } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -176,6 +176,26 @@ export async function GET() {
   }
 
   // --- Cache miss: scrape in parallel, stream as each finishes ---
+  // If another request is already scraping, wait briefly then re-check cache
+  if (isCacheInFlight()) {
+    console.log('[Stream] Scrape already in flight — waiting 3s then re-checking cache');
+    await new Promise(r => setTimeout(r, 3000));
+    const laterCache = getCachedJobs();
+    if (laterCache) {
+      const age = getCacheAge();
+      const stream = new ReadableStream({
+        start(controller) {
+          for (const c of companies) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ company: c, data: laterCache[c] || [], cached: true, cacheAge: age })}\n\n`));
+          }
+          controller.close();
+        },
+      });
+      return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive' } });
+    }
+  }
+
+  markCacheInFlight();
   console.log('[Stream] Cache miss — starting parallel scrape');
   const freshData = {};
 
