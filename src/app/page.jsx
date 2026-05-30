@@ -21,10 +21,6 @@ const SORT_OPTIONS = [
   { value: 'company',  label: 'Company' },
 ];
 
-function getSavedBookmarks() {
-  if (typeof window === 'undefined') return {};
-  try { return JSON.parse(localStorage.getItem('career-radar-bookmarks') || '{}'); } catch { return {}; }
-}
 
 function getSeenJobIds() {
   if (typeof window === 'undefined') return new Set();
@@ -45,8 +41,6 @@ export default function Home() {
   const [companyErrors,    setCompanyErrors]     = useState({});
   const [loadingCompanies, setLoadingCompanies]  = useState(new Set(COMPANIES));
   const [company,          setCompany]           = useState('linkedin');
-  const [showBookmarks,    setShowBookmarks]     = useState(false);
-  const [bookmarks,        setBookmarks]         = useState({});
   const [fromCache,        setFromCache]         = useState(false);
   const [cacheAge,         setCacheAge]          = useState(null);
   const [seenIds,          setSeenIds]           = useState(new Set());
@@ -106,7 +100,6 @@ export default function Home() {
 
   // Bootstrap: load localStorage state + kick off stream
   useEffect(() => {
-    setBookmarks(getSavedBookmarks());
     setSeenIds(getSeenJobIds());
 
     if (!fetchStarted.current) {
@@ -115,26 +108,14 @@ export default function Home() {
     }
   }, [startStreaming]);
 
-  // Event-driven bookmark sync (replaces the 1-second polling interval)
-  useEffect(() => {
-    const sync = () => setBookmarks(getSavedBookmarks());
-    window.addEventListener('storage', sync);        // cross-tab sync
-    window.addEventListener('bookmarkChanged', sync); // same-tab from JobCard
-    return () => {
-      window.removeEventListener('storage', sync);
-      window.removeEventListener('bookmarkChanged', sync);
-    };
-  }, []);
 
   // Keyboard ← → to switch company tabs
   useEffect(() => {
     const handleKey = e => {
       if (e.target.tagName === 'INPUT') return;
       if (e.key === 'ArrowRight') {
-        setShowBookmarks(false);
         setCompany(prev => COMPANIES[(COMPANIES.indexOf(prev) + 1) % COMPANIES.length]);
       } else if (e.key === 'ArrowLeft') {
-        setShowBookmarks(false);
         setCompany(prev => COMPANIES[(COMPANIES.indexOf(prev) - 1 + COMPANIES.length) % COMPANIES.length]);
       }
     };
@@ -145,16 +126,12 @@ export default function Home() {
   // Derived values — memoised to avoid recomputing on every render
   const isAllDone        = loadingCompanies.size === 0;
   const completedCount   = COMPANIES.length - loadingCompanies.size;
-  const isCurrentLoading = !showBookmarks && loadingCompanies.has(company);
+  const isCurrentLoading = loadingCompanies.has(company);
   const totalJobs        = useMemo(
     () => Object.values(allJobs).reduce((s, j) => s + j.length, 0),
     [allJobs]
   );
-  const bookmarkedJobs = useMemo(
-    () => Object.values(allJobs).flat().filter(j => bookmarks[j.id]),
-    [allJobs, bookmarks]
-  );
-  const baseJobs = showBookmarks ? bookmarkedJobs : (allJobs[company] || []);
+  const baseJobs = allJobs[company] || [];
 
   const sortedJobs = useMemo(() => {
     let result = [...baseJobs];
@@ -172,7 +149,7 @@ export default function Home() {
     return result;
   }, [baseJobs, search, sortBy]);
 
-  const currentError = !showBookmarks ? companyErrors[company] : null;
+  const currentError = companyErrors[company];
 
   return (
     <main className="min-h-screen bg-[#000000] text-white selection:bg-white/30 font-sans">
@@ -181,19 +158,12 @@ export default function Home() {
       <div className="starfield-md" />
       <div className="starfield-lg" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-500">
-            Career Radar
-          </h1>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto font-light leading-relaxed">
-            Discover top opportunities across the tech industry — scraped live from company careers pages.
-          </p>
-
+        {/* Header / Stats */}
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-end gap-4 empty:hidden">
           {totalJobs > 0 && (
-            <div className="mt-4 flex flex-col items-center gap-1">
+            <div className="flex flex-col gap-1">
               <p className="text-sm text-zinc-500">
                 Found <span className="text-white font-semibold">{totalJobs} jobs</span> across{' '}
                 <span className="text-white font-semibold">{completedCount} companies</span>
@@ -238,12 +208,12 @@ export default function Home() {
                 const scanning = loadingCompanies.has(id);
                 const count    = (allJobs[id] || []).length;
                 const hasError = !!companyErrors[id];
-                const isActive = !showBookmarks && company === id;
+                const isActive = company === id;
 
                 return (
                   <button
                     key={id}
-                    onClick={() => { setCompany(id); setShowBookmarks(false); }}
+                    onClick={() => setCompany(id)}
                     title={hasError ? `Failed to scrape ${meta.label}` : undefined}
                     className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300 whitespace-nowrap ${
                       isActive
@@ -263,22 +233,6 @@ export default function Home() {
                 );
               })}
 
-              {/* Bookmarks tab */}
-              <button
-                onClick={() => setShowBookmarks(true)}
-                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300 whitespace-nowrap ${
-                  showBookmarks
-                    ? 'bg-amber-400 text-black shadow-lg shadow-amber-400/20'
-                    : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                🔖 Saved
-                {bookmarkedJobs.length > 0 && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${showBookmarks ? 'bg-black/20 text-black' : 'bg-amber-400/20 text-amber-400'}`}>
-                    {bookmarkedJobs.length}
-                  </span>
-                )}
-              </button>
             </div>
 
             {/* Refresh */}
@@ -345,11 +299,9 @@ export default function Home() {
 
           {!isCurrentLoading && sortedJobs.length === 0 && (
             <div className="text-center p-12 text-gray-400">
-              <span className="text-5xl block mb-4">{showBookmarks ? '🔖' : search ? '🔍' : '🚀'}</span>
+              <span className="text-5xl block mb-4">{search ? '🔍' : '🚀'}</span>
               <p className="text-lg font-medium">
-                {showBookmarks
-                  ? 'No saved jobs yet. Bookmark any card to save it here.'
-                  : search
+                {search
                     ? `No jobs matching "${search}"`
                     : `No listings found for ${COMPANY_META[company]?.label}.`}
               </p>
@@ -365,7 +317,7 @@ export default function Home() {
             <div>
               <p className="text-xs text-zinc-600 mb-4">
                 Showing {sortedJobs.length} job{sortedJobs.length !== 1 ? 's' : ''}
-                {showBookmarks ? ' saved' : ` at ${COMPANY_META[company]?.label}`}
+                {` at ${COMPANY_META[company]?.label}`}
                 {search && ` · filtered by "${search}"`}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 auto-rows-fr">
