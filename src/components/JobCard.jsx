@@ -178,7 +178,9 @@ export default function JobCard({ job, isNew = false }) {
     resumes[job.id] = true;
     localStorage.setItem(RESUME_KEY, JSON.stringify(resumes));
     setResumeBuilt(true);
-    window.open(`/resume?${params}`, '_blank');
+    
+    const promptlyUrl = process.env.NEXT_PUBLIC_PROMPTLY_URL || 'https://resumebuilder-promptly.vercel.app';
+    window.open(`${promptlyUrl}/?${params}`, '_blank');
   }, [job]);
 
   const hasBadge = isNew || resumeBuilt || hasContact || isSearchingRecruiters;

@@ -121,7 +121,7 @@ describe('JobCard', () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
     render(<JobCard job={MOCK_JOB} />);
     await userEvent.click(screen.getByText('Build Tailored Resume'));
-    expect(openSpy).toHaveBeenCalledWith(expect.stringContaining('/resume'), '_blank');
+    expect(openSpy).toHaveBeenCalledWith(expect.stringContaining('jobTitle='), '_blank');
     const resumes = JSON.parse(localStorageStore['career-radar-resumes'] || '{}');
     expect(resumes['test-job-1']).toBe(true);
     openSpy.mockRestore();

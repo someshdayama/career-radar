@@ -10,7 +10,6 @@ export default function Header() {
 
   const navItems = [
     { name: 'Job Board', href: '/', icon: Briefcase },
-    { name: 'Resume Builder', href: '/resume', icon: FileText },
     { name: 'Networking CRM', href: '/crm', icon: Users },
   ];
 
