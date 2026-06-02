@@ -5,6 +5,14 @@ import { BaseScraper } from './scraper.interface';
 const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class GoogleScraper extends BaseScraper {
+  getMockJobs() {
+    return [
+      { id: "mock-goog-1", title: "Site Reliability Engineer (SRE)", company: "Google", location: "Bengaluru, India", descriptionSnippet: "Keep Google Services running...", applyUrl: "https://careers.google.com/jobs/results/mock-goog-1" },
+      { id: "mock-goog-2", title: "Cloud Architect (GCP)", company: "Google", location: "Gurugram, India", descriptionSnippet: "Help customers architect...", applyUrl: "https://careers.google.com/jobs/results/mock-goog-2" }
+    ];
+  }
+
+  
   async scrape() {
     // Targeting DevOps, Cloud, SRE roles in India
     const baseUrl = 'https://www.google.com/about/careers/applications/jobs/results?location=India&skills=cloud,devops,kubernetes,terraform,site+reliability';

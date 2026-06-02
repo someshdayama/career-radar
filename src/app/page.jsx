@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import JobCard from '@/components/JobCard';
+import JobDetailModal from '@/components/JobDetailModal';
 
 const COMPANIES = ['linkedin', 'microsoft', 'google', 'amazon', 'apple', 'nvidia'];
 
@@ -21,6 +22,7 @@ const SORT_OPTIONS = [
   { value: 'company',  label: 'Company' },
 ];
 
+const PAGE_SIZE = 12;
 
 function getSeenJobIds() {
   if (typeof window === 'undefined') return new Set();
@@ -43,9 +45,10 @@ export default function Home() {
   const [company,          setCompany]           = useState('linkedin');
   const [fromCache,        setFromCache]         = useState(false);
   const [cacheAge,         setCacheAge]          = useState(null);
-  const [seenIds,          setSeenIds]           = useState(new Set());
   const [search,           setSearch]            = useState('');
   const [sortBy,           setSortBy]            = useState('default');
+  const [visibleCount,     setVisibleCount]      = useState(PAGE_SIZE);
+  const [selectedJob,      setSelectedJob]       = useState(null);
 
   const fetchStarted = useRef(false);
 
@@ -55,6 +58,7 @@ export default function Home() {
     setLoadingCompanies(new Set(COMPANIES));
     setFromCache(false);
     setCacheAge(null);
+    setVisibleCount(PAGE_SIZE);
 
     fetch('/api/jobs/stream')
       .then(res => {
@@ -98,16 +102,13 @@ export default function Home() {
       .catch(() => setLoadingCompanies(new Set()));
   }, []);
 
-  // Bootstrap: load localStorage state + kick off stream
+  // Bootstrap: kick off stream
   useEffect(() => {
-    setSeenIds(getSeenJobIds());
-
     if (!fetchStarted.current) {
       fetchStarted.current = true;
       startStreaming();
     }
   }, [startStreaming]);
-
 
   // Keyboard ← → to switch company tabs
   useEffect(() => {
@@ -115,13 +116,20 @@ export default function Home() {
       if (e.target.tagName === 'INPUT') return;
       if (e.key === 'ArrowRight') {
         setCompany(prev => COMPANIES[(COMPANIES.indexOf(prev) + 1) % COMPANIES.length]);
+        setVisibleCount(PAGE_SIZE);
       } else if (e.key === 'ArrowLeft') {
         setCompany(prev => COMPANIES[(COMPANIES.indexOf(prev) - 1 + COMPANIES.length) % COMPANIES.length]);
+        setVisibleCount(PAGE_SIZE);
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, []);
+
+  // Reset pagination when company changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [company]);
 
   // Derived values — memoised to avoid recomputing on every render
   const isAllDone        = loadingCompanies.size === 0;
@@ -148,6 +156,10 @@ export default function Home() {
     if (sortBy === 'company')  result.sort((a, b) => (a.company || '').localeCompare(b.company || ''));
     return result;
   }, [baseJobs, search, sortBy]);
+
+  // Paginate
+  const paginatedJobs = useMemo(() => sortedJobs.slice(0, visibleCount), [sortedJobs, visibleCount]);
+  const hasMore = sortedJobs.length > visibleCount;
 
   const currentError = companyErrors[company];
 
@@ -200,7 +212,7 @@ export default function Home() {
         {/* Controls row */}
         <div className="flex flex-col gap-4 mb-8 bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 shadow-lg">
 
-          {/* Company tabs + Bookmarks + Refresh */}
+          {/* Company tabs + Refresh */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-hide flex-wrap">
               {COMPANIES.map(id => {
@@ -316,20 +328,43 @@ export default function Home() {
           {!isCurrentLoading && sortedJobs.length > 0 && (
             <div>
               <p className="text-xs text-zinc-600 mb-4">
-                Showing {sortedJobs.length} job{sortedJobs.length !== 1 ? 's' : ''}
+                Showing {paginatedJobs.length} of {sortedJobs.length} job{sortedJobs.length !== 1 ? 's' : ''}
                 {` at ${COMPANY_META[company]?.label}`}
                 {search && ` · filtered by "${search}"`}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 auto-rows-fr">
-                {sortedJobs.map(job => (
-                  <JobCard key={job.id} job={job} isNew={!seenIds.has(job.id)} />
+                {paginatedJobs.map(job => (
+                  <JobCard key={job.id} job={job} onSelect={setSelectedJob} />
                 ))}
               </div>
+
+              {/* Show More button */}
+              {hasMore && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
+                    className="px-8 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium text-zinc-300 hover:text-white transition-all duration-300"
+                  >
+                    Show More ({sortedJobs.length - visibleCount} remaining)
+                  </button>
+                </div>
+              )}
+
+              {!hasMore && sortedJobs.length > PAGE_SIZE && (
+                <p className="mt-6 text-center text-xs text-zinc-600">
+                  Showing all {sortedJobs.length} jobs
+                </p>
+              )}
             </div>
           )}
         </div>
 
       </div>
+
+      {/* Job Detail Modal */}
+      {selectedJob && (
+        <JobDetailModal job={selectedJob} onClose={() => setSelectedJob(null)} />
+      )}
     </main>
   );
 }

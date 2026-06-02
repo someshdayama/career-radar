@@ -6,8 +6,14 @@ const PAGE_SIZE = 10;
 const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class NvidiaScraper extends BaseScraper {
+  getMockJobs() {
+    return [
+      { id: 'mock-nv-1', title: 'Deep Learning Infrastructure Engineer', company: 'Nvidia', location: 'Pune, India', descriptionSnippet: 'Build large-scale high-performance computing platforms for training foundation LLM models using Kubernetes and GPUs.', applyUrl: 'https://nvidia.wd5.myworkdayjobs.com/NVIDIACareers/job/mock-nv-1' },
+      { id: 'mock-nv-2', title: 'SRE - AI Cloud Services', company: 'Nvidia', location: 'Bengaluru, India', descriptionSnippet: 'Manage reliability and deployment setups for DGX Cloud services globally, automating failure recoveries.', applyUrl: 'https://nvidia.wd5.myworkdayjobs.com/NVIDIACareers/job/mock-nv-2' }
+    ];
+  }
+
   async scrape() {
-    // Targeting DevOps, Cloud, SRE, Program/Release Manager roles in India
     const buildUrl = (start) =>
       `https://jobs.nvidia.com/careers?start=${start}&location=india&sort_by=distance&filter_include_remote=1&filter_job_category=engineering%2Cprogram+manager%2Cit+-+information+technology&q=devops+OR+cloud+OR+SRE+OR+release+engineer+OR+infrastructure`;
 
@@ -31,11 +37,26 @@ export class NvidiaScraper extends BaseScraper {
             if (!title) return;
             const fields = Array.from(card.querySelectorAll('[class*="fieldValue-"]'));
             const location = fields[1] ? fields[1].innerText.trim() : 'India';
+            // Try to extract a posted/relisted date
+            const dateEl = card.querySelector('[class*="date-"], [class*="posted-"], time');
+            let postedDate = null;
+            if (dateEl) {
+              const dt = dateEl.getAttribute('datetime') || dateEl.innerText.trim();
+              if (dt) postedDate = dt;
+            }
             const href = card.href || card.getAttribute('href') || '';
             const fullUrl = href.startsWith('http') ? href : 'https://jobs.nvidia.com' + href;
             const hrefParts = href.split('/');
             const jobId = hrefParts[hrefParts.length - 1] || Math.random().toString(36).substring(7);
-            results.push({ id: 'nvda-' + jobId, title, company: 'Nvidia', location, descriptionSnippet: `Engineering opportunity at Nvidia in ${location}.`, applyUrl: fullUrl });
+            results.push({
+              id: 'nvda-' + jobId,
+              title,
+              company: 'Nvidia',
+              location,
+              descriptionSnippet: `Engineering opportunity at Nvidia in ${location}.`,
+              applyUrl: fullUrl,
+              postedDate: postedDate || undefined,
+            });
           });
           return results;
         });

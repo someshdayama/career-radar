@@ -4,143 +4,26 @@ import { getCachedJobs, setCachedJobs, getCacheAge, isCacheInFlight, markCacheIn
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const MOCK_JOBS = {
-  linkedin: [
-    {
-      id: "mock-li-1",
-      title: "DevOps Engineer",
-      company: "LinkedIn",
-      location: "Bengaluru, India",
-      descriptionSnippet: "Join our site reliability and infrastructure engineering team to build scalable systems at LinkedIn.",
-      applyUrl: "https://www.linkedin.com/jobs/view/mock-li-1"
-    },
-    {
-      id: "mock-li-2",
-      title: "Scrum Master",
-      company: "LinkedIn",
-      location: "Mumbai, India",
-      descriptionSnippet: "Facilitate agile teams and agile transformation as a Scrum Master on the product team.",
-      applyUrl: "https://www.linkedin.com/jobs/view/mock-li-2"
-    },
-    {
-      id: "mock-li-3",
-      title: "Cloud Infrastructure Architect",
-      company: "LinkedIn",
-      location: "Hyderabad, India",
-      descriptionSnippet: "Architect high-performance secure hybrid cloud environments for massive scale platforms.",
-      applyUrl: "https://www.linkedin.com/jobs/view/mock-li-3"
-    }
-  ],
-  microsoft: [
-    {
-      id: "mock-ms-1",
-      title: "Senior Azure DevOps Engineer",
-      company: "Microsoft",
-      location: "Hyderabad, India",
-      descriptionSnippet: "Drive the design and automation of Azure CI/CD pipelines and infrastructure as code for critical cloud products.",
-      applyUrl: "https://careers.microsoft.com/us/en/job/mock-ms-1"
-    },
-    {
-      id: "mock-ms-2",
-      title: "Cloud Engineer (Azure)",
-      company: "Microsoft",
-      location: "Bengaluru, India",
-      descriptionSnippet: "Deploy, monitor, and scale enterprise workloads in Azure, ensuring high reliability and security.",
-      applyUrl: "https://careers.microsoft.com/us/en/job/mock-ms-2"
-    }
-  ],
-  google: [
-    {
-      id: "mock-goog-1",
-      title: "Site Reliability Engineer (SRE)",
-      company: "Google",
-      location: "Bengaluru, India",
-      descriptionSnippet: "Keep Google Services running at lightning speed and high scale through systems automation and DevOps practices.",
-      applyUrl: "https://careers.google.com/jobs/results/mock-goog-1"
-    },
-    {
-      id: "mock-goog-2",
-      title: "Cloud Architect (GCP)",
-      company: "Google",
-      location: "Gurugram, India",
-      descriptionSnippet: "Help customers architect next-gen containerized and serverless applications on Google Cloud Platform.",
-      applyUrl: "https://careers.google.com/jobs/results/mock-goog-2"
-    }
-  ],
-  amazon: [
-    {
-      id: "mock-amz-1",
-      title: "Software Development Engineer - DevOps (AWS)",
-      company: "Amazon",
-      location: "Bengaluru, India",
-      descriptionSnippet: "Build core automation systems, deploy services globally, and optimize AWS resources for Amazon Retail Systems.",
-      applyUrl: "https://www.amazon.jobs/en/jobs/mock-amz-1"
-    },
-    {
-      id: "mock-amz-2",
-      title: "Systems Engineer - Cloud Operations",
-      company: "Amazon",
-      location: "Chennai, India",
-      descriptionSnippet: "Ensure top reliability for internal databases and host infrastructures spanning thousands of servers.",
-      applyUrl: "https://www.amazon.jobs/en/jobs/mock-amz-2"
-    }
-  ],
-  apple: [
-    {
-      id: "mock-apl-1",
-      title: "Infrastructure Engineer (Kubernetes)",
-      company: "Apple",
-      location: "Hyderabad, India",
-      descriptionSnippet: "Manage internal GKE and EKS container fabrics powering Apple Cloud services like iCloud and Siri.",
-      applyUrl: "https://jobs.apple.com/en-in/details/mock-apl-1"
-    },
-    {
-      id: "mock-apl-2",
-      title: "DevOps Architect",
-      company: "Apple",
-      location: "Bengaluru, India",
-      descriptionSnippet: "Design build-and-test tooling pipelines for Apple software engineering teams globally.",
-      applyUrl: "https://jobs.apple.com/en-in/details/mock-apl-2"
-    }
-  ],
-  nvidia: [
-    {
-      id: "mock-nv-1",
-      title: "Deep Learning Infrastructure Engineer",
-      company: "Nvidia",
-      location: "Pune, India",
-      descriptionSnippet: "Build large-scale high-performance computing platforms for training foundation LLM models using Kubernetes and GPUs.",
-      applyUrl: "https://nvidia.wd5.myworkdayjobs.com/NVIDIACareers/job/mock-nv-1"
-    },
-    {
-      id: "mock-nv-2",
-      title: "SRE - AI Cloud Services",
-      company: "Nvidia",
-      location: "Bengaluru, India",
-      descriptionSnippet: "Manage reliability and deployment setups for DGX Cloud services globally, automating failure recoveries.",
-      applyUrl: "https://nvidia.wd5.myworkdayjobs.com/NVIDIACareers/job/mock-nv-2"
-    }
-  ]
-};
+
 
 // Helper: scrape one company with a single automatic retry on failure
 async function scrapeWithRetry(companyId, attempt = 1) {
   const scraper = getScraper(companyId);
-  if (!scraper) return { data: MOCK_JOBS[companyId] || [], error: 'Scraper not found' };
+  if (!scraper) return { data: [], error: 'Scraper not found' };
   try {
     const data = await scraper.scrape();
     if (data && data.length > 0) {
       return { data };
     }
     console.warn(`[Stream] Scraper for ${companyId} returned 0 results, falling back to mock data`);
-    return { data: MOCK_JOBS[companyId] || [] };
+    return { data: scraper.getMockJobs() || [] };
   } catch (err) {
     if (attempt < 2) {
       console.warn(`[Stream] Retrying ${companyId} (attempt ${attempt + 1})...`);
       return scrapeWithRetry(companyId, attempt + 1);
     }
     console.error(`[Stream] Failed scraping ${companyId} after retries: ${err.message}. Falling back to mock data.`);
-    return { data: MOCK_JOBS[companyId] || [], error: err.message };
+    return { data: scraper.getMockJobs() || [], error: err.message };
   }
 }
 
