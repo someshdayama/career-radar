@@ -5,14 +5,6 @@ import { BaseScraper } from './scraper.interface';
 const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 
 export class AmazonScraper extends BaseScraper {
-  getMockJobs() {
-    return [
-      { id: "mock-amz-1", title: "Software Development Engineer - DevOps (AWS)", company: "Amazon", location: "Bengaluru, India", descriptionSnippet: "Build core automation systems...", applyUrl: "https://www.amazon.jobs/en/jobs/mock-amz-1" },
-      { id: "mock-amz-2", title: "Systems Engineer - Cloud Operations", company: "Amazon", location: "Chennai, India", descriptionSnippet: "Ensure top reliability...", applyUrl: "https://www.amazon.jobs/en/jobs/mock-amz-2" }
-    ];
-  }
-
-  
   async scrape() {
     // Targeting DevOps, Cloud, SRE, Release Engineering roles in India
     const userSearchUrl = 'https://www.amazon.jobs/en/search?offset=0&result_limit=10&sort=relevant&category%5B%5D=systems-quality-security-engineering&category%5B%5D=project-program-product-management-technical&category%5B%5D=software-development&country%5B%5D=IND&distanceType=Mi&radius=24km&industry_experience=four_to_six_years&loc_query=India&base_query=DevOps+OR+Cloud+Engineer+OR+SRE+OR+Release+Engineer&';
