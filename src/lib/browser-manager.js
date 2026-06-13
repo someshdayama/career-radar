@@ -16,8 +16,48 @@
  *   }
  */
 
-import puppeteerCore from 'puppeteer-core';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+
+function getSystemChromePath() {
+  const platform = os.platform();
+  if (platform === 'darwin') {
+    const paths = [
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    ];
+    for (const p of paths) {
+      if (fs.existsSync(p)) return p;
+    }
+  } else if (platform === 'win32') {
+    const programFiles = process.env.PROGRAMFILES || 'C:\\Program Files';
+    const programFilesX86 = process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)';
+    const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData\\Local');
+    const paths = [
+      path.join(programFiles, 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(programFilesX86, 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(localAppData, 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(programFiles, 'Microsoft\\Edge\\Application\\msedge.exe'),
+    ];
+    for (const p of paths) {
+      if (fs.existsSync(p)) return p;
+    }
+  } else if (platform === 'linux') {
+    const paths = [
+      '/usr/bin/google-chrome',
+      '/usr/bin/chromium',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/snap/bin/chromium',
+    ];
+    for (const p of paths) {
+      if (fs.existsSync(p)) return p;
+    }
+  }
+  return null;
+}
 
 if (!globalThis.__browserManager) {
   globalThis.__browserManager = {
@@ -47,7 +87,7 @@ async function ensureBrowser() {
       const chromiumModule = await import('@sparticuz/chromium');
       const chromium = chromiumModule.default || chromiumModule;
       
-      b = await puppeteerCore.launch({
+      b = await puppeteer.launch({
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
@@ -56,11 +96,20 @@ async function ensureBrowser() {
       });
       console.log('[BrowserManager] Vercel Serverless Chromium launched');
     } else {
+      const chromePath = getSystemChromePath();
+      if (!chromePath) {
+        throw new Error(
+          '[BrowserManager] Google Chrome or Microsoft Edge was not found on your system. ' +
+          'Please install Google Chrome or specify its path.'
+        );
+      }
+      
       b = await puppeteer.launch({ 
+        executablePath: chromePath,
         headless: 'new', 
         args: ['--no-sandbox', '--disable-setuid-sandbox'] 
       });
-      console.log('[BrowserManager] Local Standard Chromium launched');
+      console.log(`[BrowserManager] Local System Chrome launched: ${chromePath}`);
     }
     
     mgr.instance = b;

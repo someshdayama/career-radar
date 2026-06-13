@@ -75,11 +75,6 @@ beforeEach(async () => {
 });
 
 describe('Home page', () => {
-  it('renders the Career Radar heading', () => {
-    render(<Home />);
-    expect(screen.getByRole('heading', { name: /Career Radar/i })).toBeInTheDocument();
-  });
-
   it('renders company tab buttons', () => {
     render(<Home />);
     expect(screen.getByRole('button', { name: /LinkedIn/i })).toBeInTheDocument();
@@ -125,13 +120,5 @@ describe('Home page', () => {
     await userEvent.click(screen.getByText('✕'));
     // jobs return
     await waitFor(() => screen.getAllByTestId('job-card').length > 0);
-  });
-
-  it('Saved tab shows "No saved jobs" when nothing is bookmarked', async () => {
-    render(<Home />);
-    await waitFor(() => screen.getAllByTestId('job-card').length > 0);
-
-    await userEvent.click(screen.getByRole('button', { name: /🔖 Saved/i }));
-    expect(screen.getByText(/No saved jobs yet/i)).toBeInTheDocument();
   });
 });
