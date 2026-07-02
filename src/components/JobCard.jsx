@@ -44,7 +44,7 @@ function isJobNew(postedDate) {
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
-export default function JobCard({ job, isNew = false, onSelect }) {
+export default function JobCard({ job, isNew = false, onSelect, isSaved = false, onToggleSave, jobStatus }) {
   // If the job has a postedDate, compute real freshness
   const computedIsNew = job.postedDate ? isJobNew(job.postedDate) : isNew;
   const dateLabel = formatPostedDate(job.postedDate);
@@ -65,7 +65,27 @@ export default function JobCard({ job, isNew = false, onSelect }) {
             NEW
           </span>
         )}
+        {jobStatus === 'applied' && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">✅ Applied</span>
+        )}
+        {jobStatus === 'interviewing' && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">🎯 Interviewing</span>
+        )}
+        {jobStatus === 'rejected' && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">✕ Rejected</span>
+        )}
       </div>
+
+      {/* Bookmark button */}
+      <button
+        className="absolute top-4 right-12 z-10 w-6 h-6 flex items-center justify-center rounded-full transition-all"
+        onClick={(e) => { e.stopPropagation(); onToggleSave?.(job.id); }}
+        title={isSaved ? 'Remove bookmark' : 'Bookmark job'}
+        aria-label={isSaved ? 'Remove bookmark' : 'Bookmark job'}
+        style={{ color: isSaved ? '#fbbf24' : '#4b5563', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '0.9rem' }}
+      >
+        {isSaved ? '★' : '☆'}
+      </button>
 
       {/* Posted date badge on right */}
       {dateLabel && (

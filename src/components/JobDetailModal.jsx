@@ -1,12 +1,23 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
+
+const STATUS_OPTIONS = [
+  { value: '', label: 'No status', color: 'rgba(255,255,255,0.1)', text: '#9ca3af' },
+  { value: 'saved', label: '🔖 Saved', color: 'rgba(99,179,237,0.15)', text: '#63b3ed' },
+  { value: 'applied', label: '✅ Applied', color: 'rgba(52,211,153,0.15)', text: '#34d399' },
+  { value: 'interviewing', label: '🎯 Interviewing', color: 'rgba(251,191,36,0.15)', text: '#fbbf24' },
+  { value: 'rejected', label: '✕ Rejected', color: 'rgba(244,63,94,0.15)', text: '#f43f5e' },
+];
 
 /**
  * Modal / Slide-over panel showing full job details.
  * Opens when a JobCard is clicked. Supports Escape to close.
  */
-export default function JobDetailModal({ job, onClose, onApply }) {
+export default function JobDetailModal({ job, onClose, onApply, jobStatuses, onStatusChange }) {
+  const [copied, setCopied] = useState(false);
+  const currentStatus = job ? (jobStatuses?.[job.id] || '') : '';
+
   // Close on Escape key
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Escape') onClose?.();
@@ -22,7 +33,19 @@ export default function JobDetailModal({ job, onClose, onApply }) {
     };
   }, [handleKeyDown]);
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(job?.applyUrl || window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
   if (!job) return null;
+
+  const statusMeta = STATUS_OPTIONS.find(s => s.value === currentStatus) || STATUS_OPTIONS[0];
 
   return (
     <>
@@ -76,6 +99,32 @@ export default function JobDetailModal({ job, onClose, onApply }) {
               </span>
             </div>
 
+            {/* Status Tracker */}
+            <div className="mb-5">
+              <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Application Status</p>
+              <div className="flex flex-wrap gap-2">
+                {STATUS_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => onStatusChange?.(job.id, opt.value)}
+                    style={{
+                      backgroundColor: currentStatus === opt.value ? opt.color : 'rgba(255,255,255,0.04)',
+                      color: currentStatus === opt.value ? opt.text : '#6b7280',
+                      border: `1px solid ${currentStatus === opt.value ? opt.text + '55' : 'rgba(255,255,255,0.08)'}`,
+                      borderRadius: '8px',
+                      padding: '0.3rem 0.75rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {opt.label || 'None'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Description */}
             <div className="mb-6">
               <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">About this role</h3>
@@ -97,7 +146,7 @@ export default function JobDetailModal({ job, onClose, onApply }) {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <a
                 href={job.applyUrl}
                 target="_blank"
@@ -110,8 +159,24 @@ export default function JobDetailModal({ job, onClose, onApply }) {
                 </svg>
               </a>
               <button
+                onClick={handleCopyLink}
+                className="inline-flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 text-zinc-300 font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-sm border border-white/10"
+                title="Copy job link"
+              >
+                {copied ? (
+                  <>✓ Copied</>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Link
+                  </>
+                )}
+              </button>
+              <button
                 onClick={onClose}
-                className="flex-1 inline-flex items-center justify-center bg-white/10 hover:bg-white/15 text-zinc-300 font-medium py-2.5 px-6 rounded-xl transition-all duration-300 text-sm border border-white/10"
+                className="inline-flex items-center justify-center bg-white/10 hover:bg-white/15 text-zinc-300 font-medium py-2.5 px-4 rounded-xl transition-all duration-300 text-sm border border-white/10"
               >
                 Close
               </button>
