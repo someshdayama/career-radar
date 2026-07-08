@@ -13,7 +13,7 @@ export class AppleScraper extends BaseScraper {
   }
 
   async scrape() {
-    const baseUrl = 'https://jobs.apple.com/en-in/search?location=india-INDC&key=devops+cloud+SRE+site+reliability';
+    const baseUrl = 'https://jobs.apple.com/en-in/search?location=india-INDC&key=devops+cloud+SRE+site+reliability+product+manager+scrum+master+product+owner';
     const { page, release } = await acquireBrowser();
     let allJobs = [];
     const seen = new Set();

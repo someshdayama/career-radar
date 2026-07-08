@@ -15,7 +15,7 @@ export class NvidiaScraper extends BaseScraper {
 
   async scrape() {
     const buildUrl = (start) =>
-      `https://jobs.nvidia.com/careers?start=${start}&location=india&sort_by=distance&filter_include_remote=1&filter_job_category=engineering%2Cprogram+manager%2Cit+-+information+technology&q=devops+OR+cloud+OR+SRE+OR+release+engineer+OR+infrastructure`;
+      `https://jobs.nvidia.com/careers?start=${start}&location=india&sort_by=distance&filter_include_remote=1&filter_job_category=engineering%2Cprogram+manager%2Cit+-+information+technology&q=devops+OR+cloud+OR+SRE+OR+release+engineer+OR+infrastructure+OR+product+manager+OR+scrum+master+OR+product+owner`;
 
     const { page, release } = await acquireBrowser();
     let allJobs = [];

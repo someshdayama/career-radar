@@ -15,7 +15,7 @@ export class GoogleScraper extends BaseScraper {
   
   async scrape() {
     // Targeting DevOps, Cloud, SRE roles in India
-    const baseUrl = 'https://www.google.com/about/careers/applications/jobs/results?location=India&skills=cloud,devops,kubernetes,terraform,site+reliability';
+    const baseUrl = 'https://www.google.com/about/careers/applications/jobs/results?location=India&skills=cloud,devops,kubernetes,terraform,site+reliability,product+management,product+owner,scrum+master';
     const { page, release } = await acquireBrowser();
     let allJobs = [];
     const seen = new Set();

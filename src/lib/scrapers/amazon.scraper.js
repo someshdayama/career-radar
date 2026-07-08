@@ -7,7 +7,7 @@ const MAX_PAGES = process.env.NETLIFY ? 1 : 3;
 export class AmazonScraper extends BaseScraper {
   async scrape() {
     // Targeting DevOps, Cloud, SRE, Release Engineering roles in India
-    const userSearchUrl = 'https://www.amazon.jobs/en/search?offset=0&result_limit=10&sort=relevant&category%5B%5D=systems-quality-security-engineering&category%5B%5D=project-program-product-management-technical&category%5B%5D=software-development&country%5B%5D=IND&distanceType=Mi&radius=24km&industry_experience=four_to_six_years&loc_query=India&base_query=DevOps+OR+Cloud+Engineer+OR+SRE+OR+Release+Engineer&';
+    const userSearchUrl = 'https://www.amazon.jobs/en/search?offset=0&result_limit=10&sort=relevant&category%5B%5D=systems-quality-security-engineering&category%5B%5D=project-program-product-management-technical&category%5B%5D=software-development&country%5B%5D=IND&distanceType=Mi&radius=24km&industry_experience=four_to_six_years&loc_query=India&base_query=DevOps+OR+Cloud+Engineer+OR+SRE+OR+Release+Engineer+OR+Product+Manager+OR+Product+Owner+OR+Scrum+Master&';
     
     const { page, release } = await acquireBrowser();
     let allJobs = [];

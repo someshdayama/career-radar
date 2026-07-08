@@ -4,6 +4,8 @@ import { GoogleScraper } from './google.scraper';
 import { AmazonScraper } from './amazon.scraper';
 import { AppleScraper } from './apple.scraper';
 import { NvidiaScraper } from './nvidia.scraper';
+import { ArbeitnowScraper } from './arbeitnow.scraper';
+import { RemotiveScraper } from './remotive.scraper';
 
 const scrapers = {
   linkedin:  new LinkedinScraper(),
@@ -12,6 +14,8 @@ const scrapers = {
   amazon:    new AmazonScraper(),
   apple:     new AppleScraper(),
   nvidia:    new NvidiaScraper(),
+  arbeitnow: new ArbeitnowScraper(),
+  remotive:  new RemotiveScraper(),
 };
 
 /**

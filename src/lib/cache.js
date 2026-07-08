@@ -38,9 +38,56 @@ export function markCacheInFlight() {
   store.inFlight = true;
 }
 
-/** Persists fresh data and clears the in-flight flag. */
-export function setCachedJobs(data) {
-  store.data = data;
+/** Persists fresh data by merging it incrementally with existing cache. */
+export function setCachedJobs(newData) {
+  if (!store.data) {
+    store.data = {};
+  }
+
+  const CUTOFF_MS = 48 * 60 * 60 * 1000; // 48 hours
+  const now = Date.now();
+  const cutoffTime = now - CUTOFF_MS;
+
+  Object.entries(newData).forEach(([source, newJobsList]) => {
+    const existingJobs = store.data[source] || [];
+
+    // If the new scrape is empty (e.g. rate-limited, timeout, or block), keep existing cached jobs
+    if (!newJobsList || newJobsList.length === 0) {
+      console.log(`[Cache] New scrape for "${source}" returned 0 results. Retaining existing ${existingJobs.length} cached jobs.`);
+      return;
+    }
+
+    // Merge and deduplicate by job ID
+    const mergedMap = new Map();
+    
+    // 1. Load existing jobs (filtering out any first scraped more than 48 hours ago)
+    existingJobs.forEach(job => {
+      if (job && job.id) {
+        const scrapedAt = job.scrapedAt || now;
+        if (scrapedAt > cutoffTime) {
+          mergedMap.set(job.id, { ...job, scrapedAt });
+        }
+      }
+    });
+
+    // 2. Overwrite/add new jobs (preserve original scrapedAt if job already cached)
+    newJobsList.forEach(job => {
+      if (job && job.id) {
+        const existingJob = mergedMap.get(job.id);
+        const scrapedAt = existingJob ? existingJob.scrapedAt : now;
+        mergedMap.set(job.id, { ...job, scrapedAt });
+      }
+    });
+
+    const mergedList = Array.from(mergedMap.values());
+
+    // 3. Keep memory footprint low by retaining the latest 150 jobs per source
+    const trimmedList = mergedList.slice(-150);
+
+    console.log(`[Cache] Scrape for "${source}" finished. Merged into ${trimmedList.length} unique cached jobs.`);
+    store.data[source] = trimmedList;
+  });
+
   store.timestamp = Date.now();
   store.inFlight = false;
 }

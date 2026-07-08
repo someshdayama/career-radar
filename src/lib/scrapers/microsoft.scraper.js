@@ -13,7 +13,7 @@ export class MicrosoftScraper extends BaseScraper {
   }
 
   async scrape() {
-    const baseUrl = 'https://jobs.careers.microsoft.com/global/en/search?q=devops+OR+cloud+engineer+OR+site+reliability+OR+release+engineer&lc=India&l=en_us&pg=1&pgSz=20&o=Relevance';
+    const baseUrl = 'https://jobs.careers.microsoft.com/global/en/search?q=devops+OR+cloud+engineer+OR+site+reliability+OR+release+engineer+OR+product+manager+OR+scrum+master+OR+product+owner&lc=India&l=en_us&pg=1&pgSz=20&o=Relevance';
     const { page, release } = await acquireBrowser();
     let allJobs = [];
     const seen = new Set();

@@ -26,7 +26,18 @@ export class LinkedinScraper extends BaseScraper {
   }
 
   async scrape() {
-    const roles = ['DevOps', 'Scrum Master', 'Cloud Engineer'];
+    const roles = [
+      'Software Engineer',
+      'DevOps',
+      'SRE',
+      'Cloud Engineer',
+      'QA Engineer',
+      'DBA',
+      'Solutions Architect',
+      'Product Manager',
+      'Product Owner',
+      'Scrum Master'
+    ];
 
     const scrapeRole = async (roleName) => {
       console.log(`[LinkedIn] Scraping role: ${roleName}`);
@@ -39,7 +50,7 @@ export class LinkedinScraper extends BaseScraper {
         $('li').each((_, li) => {
           const $li = $(li);
           const titleEl = $li.find('.base-search-card__title');
-          const companyEl = $li.find('.base-search-card__subtitle, .hidden-nested-link');
+          const companyEl = $li.find('.base-search-card__subtitle, .hidden-nested-link').first();
           const locationEl = $li.find('.job-search-card__location');
           const linkEl = $li.find('a.base-card__full-link, a[data-tracking-control-name="public_jobs_jserp-result_search-card"]');
 
