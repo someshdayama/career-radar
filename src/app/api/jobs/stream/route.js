@@ -1,36 +1,50 @@
 import { getScraper, getSupportedCompanies } from '@/lib/scrapers/registry';
-import { getCachedJobs, setCachedJobs, getCacheAge, isCacheInFlight, markCacheInFlight, invalidateCache } from '@/lib/cache';
+import { getCachedJobs, setCachedJobs, getCacheAge, isCacheInFlight, markCacheInFlight } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
+function stripMockJobs(jobs) {
+  if (!Array.isArray(jobs)) return [];
+  return jobs.filter(j => {
+    if (!j) return false;
+    const id = String(j.id || '');
+    const url = String(j.applyUrl || '');
+    if (id.startsWith('mock-') || id.includes('-mock-')) return false;
+    if (url.includes('/mock-') || url.includes('mock-')) return false;
+    return true;
+  });
+}
 
-
-// Helper: scrape one company with a single automatic retry on failure
+/**
+ * Scrape one company with a single automatic retry.
+ * Never injects mock jobs — empty results and failures return real empty data + status.
+ */
 async function scrapeWithRetry(companyId, attempt = 1) {
   const scraper = getScraper(companyId);
-  if (!scraper) return { data: [], error: 'Scraper not found' };
+  if (!scraper) {
+    return { data: [], status: 'error', error: 'Scraper not found', count: 0 };
+  }
+
   try {
-    const data = await scraper.scrape();
-    if (data && data.length > 0) {
-      return { data };
+    const raw = await scraper.scrape();
+    const data = stripMockJobs(Array.isArray(raw) ? raw : []);
+    if (data.length > 0) {
+      return { data, status: 'ok', count: data.length };
     }
-    console.warn(`[Stream] Scraper for ${companyId} returned 0 results, falling back to mock data`);
-    return { data: scraper.getMockJobs() || [] };
+    console.warn(`[Stream] Scraper for ${companyId} returned 0 real jobs (no mock fallback)`);
+    return { data: [], status: 'empty', count: 0 };
   } catch (err) {
     if (attempt < 2) {
       console.warn(`[Stream] Retrying ${companyId} (attempt ${attempt + 1})...`);
       return scrapeWithRetry(companyId, attempt + 1);
     }
-    console.error(`[Stream] Failed scraping ${companyId} after retries: ${err.message}. Falling back to mock data.`);
-    return { data: scraper.getMockJobs() || [], error: err.message };
+    console.error(`[Stream] Failed scraping ${companyId} after retries: ${err.message}.`);
+    return { data: [], status: 'error', error: err.message, count: 0 };
   }
 }
 
 // Next.js streaming endpoint using Server-Sent Events (SSE).
-// All scrapers run in PARALLEL sharing a single Chromium instance.
-// Results are pushed to the client as each company finishes.
-// Responses are cached for 15 minutes — repeat visits are instant.
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const forceRefresh = searchParams.get('refresh') === 'true';
@@ -46,7 +60,8 @@ export async function GET(request) {
     const stream = new ReadableStream({
       start(controller) {
         for (const c of companies) {
-          const payload = { company: c, data: cached[c] || [], cached: true, cacheAge: age };
+          const list = stripMockJobs(cached[c] || []);
+          const payload = { company: c, data: list, cached: true, cacheAge: age };
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
         }
         controller.close();
@@ -62,7 +77,6 @@ export async function GET(request) {
   }
 
   // --- Cache miss: scrape in parallel, stream as each finishes ---
-  // If another request is already scraping, wait briefly then re-check cache
   if (isCacheInFlight()) {
     console.log('[Stream] Scrape already in flight — waiting 3s then re-checking cache');
     await new Promise(r => setTimeout(r, 3000));
@@ -72,7 +86,8 @@ export async function GET(request) {
       const stream = new ReadableStream({
         start(controller) {
           for (const c of companies) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ company: c, data: laterCache[c] || [], cached: true, cacheAge: age })}\n\n`));
+            const list = stripMockJobs(laterCache[c] || []);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ company: c, data: list, cached: true, cacheAge: age })}\n\n`));
           }
           controller.close();
         },
@@ -93,19 +108,19 @@ export async function GET(request) {
 
       const promises = companies.map(async (c) => {
         console.log(`[Stream] Scraping ${c}...`);
-        const { data, error } = await scrapeWithRetry(c);
+        const { data, error, status, count } = await scrapeWithRetry(c);
         if (error) {
           console.error(`[Stream] Failed ${c}: ${error}`);
         } else {
-          console.log(`[Stream] Done: ${c} — ${data.length} jobs`);
+          console.log(`[Stream] Done: ${c} — ${data.length} jobs (${status})`);
         }
         freshData[c] = data;
-        send({ company: c, data, ...(error ? { error } : {}) });
+        send({ company: c, data, status, count, ...(error ? { error } : {}) });
       });
 
       await Promise.allSettled(promises);
 
-      // Persist to cache so next request is instant
+      // Persist to cache
       setCachedJobs(freshData);
       console.log('[Stream] Results cached for 15 minutes');
 

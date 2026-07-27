@@ -2,20 +2,6 @@ import { BaseScraper } from './scraper.interface.js';
 import { isIndiaOrStrictlyRemote } from '../classification.js';
 
 export class ArbeitnowScraper extends BaseScraper {
-  getMockJobs() {
-    return [
-      {
-        id: 'mock-an-1',
-        title: 'Backend Engineer (Node.js)',
-        company: 'FinTech Corp',
-        location: 'Remote (Global)',
-        descriptionSnippet: 'Build reliable finance APIs and transaction infrastructure using Node.js and TypeScript.',
-        applyUrl: 'https://arbeitnow.com/jobs/mock-an-1',
-        postedDate: new Date().toISOString()
-      }
-    ];
-  }
-
   async scrape() {
     try {
       console.log('[Arbeitnow] Fetching jobs...');
@@ -26,7 +12,7 @@ export class ArbeitnowScraper extends BaseScraper {
       const json = await response.json();
       
       if (!json || !Array.isArray(json.data)) {
-        return this.getMockJobs();
+        return [];
       }
 
       console.log(`[Arbeitnow] Found ${json.data.length} jobs before filtering.`);
@@ -54,10 +40,10 @@ export class ArbeitnowScraper extends BaseScraper {
         };
       });
 
-      return mapped.length > 0 ? mapped : this.getMockJobs();
+      return mapped;
     } catch (err) {
       console.error('[Arbeitnow] Scrape error:', err.message);
-      return this.getMockJobs();
+      return [];
     }
   }
 }

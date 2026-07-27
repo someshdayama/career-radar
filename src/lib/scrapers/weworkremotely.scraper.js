@@ -2,29 +2,6 @@ import { BaseScraper } from './scraper.interface.js';
 import * as cheerio from 'cheerio';
 
 export class WeWorkRemotelyScraper extends BaseScraper {
-  getMockJobs() {
-    return [
-      {
-        id: 'mock-wwr-1',
-        title: 'Backend Engineer (Python / Django)',
-        company: 'WeWorkRemotely Partner',
-        location: 'Remote (Worldwide)',
-        descriptionSnippet: 'Architect microservices, PostgreSQL databases, and API gateways for enterprise platforms.',
-        applyUrl: 'https://weworkremotely.com/jobs/mock-wwr-1',
-        postedDate: new Date().toISOString()
-      },
-      {
-        id: 'mock-wwr-2',
-        title: 'DevOps / Infrastructure Engineer',
-        company: 'Cloud Scale Tech',
-        location: 'Remote',
-        descriptionSnippet: 'Manage AWS infrastructure, Terraform, and automated deployment pipelines.',
-        applyUrl: 'https://weworkremotely.com/jobs/mock-wwr-2',
-        postedDate: new Date().toISOString()
-      }
-    ];
-  }
-
   async scrape() {
     try {
       console.log('[WeWorkRemotely] Fetching RSS feeds for tech roles...');
@@ -85,10 +62,10 @@ export class WeWorkRemotelyScraper extends BaseScraper {
       }
 
       console.log(`[WeWorkRemotely] Parsed ${allJobs.length} remote tech jobs from RSS feeds.`);
-      return allJobs.length > 0 ? allJobs : this.getMockJobs();
+      return allJobs;
     } catch (err) {
       console.error('[WeWorkRemotely] Scrape error:', err.message);
-      return this.getMockJobs();
+      return [];
     }
   }
 }

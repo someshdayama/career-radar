@@ -5,7 +5,7 @@
  * bookmarks tab, and clear search capability.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
@@ -66,17 +66,12 @@ beforeEach(async () => {
     body: buildSSEStream(),
   });
   vi.resetModules();
-  vi.mock('@/components/JobCard', () => ({
-    default: ({ job }: { job: { title: string } }) => (
-      <div data-testid="job-card">{job.title}</div>
-    ),
-  }));
   Home = (await import('@/app/page')).default;
 });
 
 describe('Home page', () => {
-  it('renders IT role tab buttons', () => {
-    render(<Home />);
+  it('renders IT role tab buttons', async () => {
+    await act(async () => { render(<Home />); });
     expect(screen.getByRole('button', { name: /All IT Jobs/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Software Engineer/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /DevOps \/ SRE/i })).toBeInTheDocument();
@@ -84,14 +79,14 @@ describe('Home page', () => {
   });
 
   it('shows job cards after stream completes', async () => {
-    render(<Home />);
+    await act(async () => { render(<Home />); });
     await waitFor(() => {
       expect(screen.getAllByTestId('job-card').length).toBeGreaterThan(0);
     });
   });
 
   it('switching to DevOps tab filters jobs by role', async () => {
-    render(<Home />);
+    await act(async () => { render(<Home />); });
     await waitFor(() => screen.getAllByTestId('job-card').length > 0);
 
     await userEvent.click(screen.getByRole('button', { name: /DevOps \/ SRE/i }));
@@ -101,7 +96,7 @@ describe('Home page', () => {
   });
 
   it('search bar filters job cards by title', async () => {
-    render(<Home />);
+    await act(async () => { render(<Home />); });
     await waitFor(() => screen.getAllByTestId('job-card').length > 0);
 
     const searchInput = screen.getByPlaceholderText(/Search by title/i);
@@ -110,7 +105,7 @@ describe('Home page', () => {
   });
 
   it('clear search button removes filter', async () => {
-    render(<Home />);
+    await act(async () => { render(<Home />); });
     await waitFor(() => screen.getAllByTestId('job-card').length > 0);
 
     const searchInput = screen.getByPlaceholderText(/Search by title/i);

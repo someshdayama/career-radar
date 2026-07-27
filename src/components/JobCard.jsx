@@ -74,7 +74,7 @@ export default function JobCard({ job, isNew = false, onSelect, isSaved = false,
           )}
           <button
             className="w-6 h-6 flex items-center justify-center rounded-full transition-colors text-xs hover:bg-zinc-800"
-            onClick={(e) => { e.stopPropagation(); onToggleSave?.(job.id); }}
+            onClick={(e) => { e.stopPropagation(); onToggleSave?.(job); }}
             title={isSaved ? 'Remove bookmark' : 'Bookmark job'}
             aria-label={isSaved ? 'Remove bookmark' : 'Bookmark job'}
             style={{ color: isSaved ? '#fbbf24' : '#71717a', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}

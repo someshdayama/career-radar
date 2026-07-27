@@ -2,29 +2,6 @@ import { BaseScraper } from './scraper.interface.js';
 import { isIndiaOrStrictlyRemote } from '../classification.js';
 
 export class HnJobsScraper extends BaseScraper {
-  getMockJobs() {
-    return [
-      {
-        id: 'mock-hn-1',
-        title: 'Senior Backend Engineer (Go / Rust)',
-        company: 'HN Startup',
-        location: 'Remote (Worldwide)',
-        descriptionSnippet: 'Y Combinator funded startup building high-throughput distributed systems in Go & Rust.',
-        applyUrl: 'https://news.ycombinator.com/item?id=mock-hn-1',
-        postedDate: new Date().toISOString()
-      },
-      {
-        id: 'mock-hn-2',
-        title: 'Full Stack Engineer (TypeScript & Python)',
-        company: 'AI Research Lab',
-        location: 'Remote',
-        descriptionSnippet: 'Building next generation generative AI developer tools and workflows.',
-        applyUrl: 'https://news.ycombinator.com/item?id=mock-hn-2',
-        postedDate: new Date().toISOString()
-      }
-    ];
-  }
-
   async scrape() {
     try {
       console.log('[HN Jobs] Searching Hacker News Algolia API for latest "Who is hiring" thread...');
@@ -39,7 +16,7 @@ export class HnJobsScraper extends BaseScraper {
       const hits = searchData.hits || [];
       if (!hits.length || !hits[0].objectID) {
         console.warn('[HN Jobs] No "Who is hiring" thread found.');
-        return this.getMockJobs();
+        return [];
       }
 
       const storyId = hits[0].objectID;
@@ -92,10 +69,10 @@ export class HnJobsScraper extends BaseScraper {
       }
 
       console.log(`[HN Jobs] Parsed ${jobs.length} startup tech positions.`);
-      return jobs.length > 0 ? jobs : this.getMockJobs();
+      return jobs;
     } catch (err) {
       console.error('[HN Jobs] Scrape error:', err.message);
-      return this.getMockJobs();
+      return [];
     }
   }
 }

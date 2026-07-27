@@ -17,14 +17,6 @@ function fetchHtml(url) {
 }
 
 export class LinkedinScraper extends BaseScraper {
-  getMockJobs() {
-    return [
-      { id: 'mock-li-1', title: 'DevOps Engineer', company: 'LinkedIn', location: 'Bengaluru, India', descriptionSnippet: 'Join our site reliability and infrastructure engineering team to build scalable systems at LinkedIn.', applyUrl: 'https://www.linkedin.com/jobs/view/mock-li-1' },
-      { id: 'mock-li-2', title: 'Scrum Master', company: 'LinkedIn', location: 'Mumbai, India', descriptionSnippet: 'Facilitate agile teams and agile transformation as a Scrum Master on the product team.', applyUrl: 'https://www.linkedin.com/jobs/view/mock-li-2' },
-      { id: 'mock-li-3', title: 'Cloud Infrastructure Architect', company: 'LinkedIn', location: 'Hyderabad, India', descriptionSnippet: 'Architect high-performance secure hybrid cloud environments for massive scale platforms.', applyUrl: 'https://www.linkedin.com/jobs/view/mock-li-3' }
-    ];
-  }
-
   async scrape() {
     const roles = [
       'Software Engineer',
@@ -115,10 +107,10 @@ export class LinkedinScraper extends BaseScraper {
       }
 
       console.log(`[LinkedIn] Successfully scraped and merged ${uniqueJobs.length} unique jobs.`);
-      return uniqueJobs.length > 0 ? uniqueJobs : this.getMockJobs();
+      return uniqueJobs;
     } catch (err) {
       console.error('[LinkedIn] Scrape error:', err.message);
-      return this.getMockJobs();
+      return [];
     }
   }
 }

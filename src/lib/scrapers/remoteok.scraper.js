@@ -2,29 +2,6 @@ import { BaseScraper } from './scraper.interface.js';
 import { isIndiaOrStrictlyRemote } from '../classification.js';
 
 export class RemoteOKScraper extends BaseScraper {
-  getMockJobs() {
-    return [
-      {
-        id: 'mock-rok-1',
-        title: 'Full Stack Engineer (React / Node)',
-        company: 'RemoteOK',
-        location: 'Remote (Worldwide)',
-        descriptionSnippet: 'Build scalable web applications with React, Next.js, and Node.js. Fully remote global team.',
-        applyUrl: 'https://remoteok.com/l/mock-rok-1',
-        postedDate: new Date().toISOString()
-      },
-      {
-        id: 'mock-rok-2',
-        title: 'Senior Site Reliability Engineer',
-        company: 'RemoteOK',
-        location: 'Remote (Global)',
-        descriptionSnippet: 'Maintain Kubernetes infrastructure, Terraform modules, and automated incident response.',
-        applyUrl: 'https://remoteok.com/l/mock-rok-2',
-        postedDate: new Date().toISOString()
-      }
-    ];
-  }
-
   async scrape() {
     try {
       console.log('[RemoteOK] Fetching remote tech jobs via API...');
@@ -40,7 +17,7 @@ export class RemoteOKScraper extends BaseScraper {
 
       const rawData = await res.json();
       if (!Array.isArray(rawData)) {
-        return this.getMockJobs();
+        return [];
       }
 
       const jobItems = rawData.slice(1);
@@ -81,10 +58,10 @@ export class RemoteOKScraper extends BaseScraper {
       }
 
       console.log(`[RemoteOK] Parsed ${jobs.length} remote tech jobs.`);
-      return jobs.length > 0 ? jobs : this.getMockJobs();
+      return jobs;
     } catch (err) {
       console.error('[RemoteOK] Scrape error:', err.message);
-      return this.getMockJobs();
+      return [];
     }
   }
 }

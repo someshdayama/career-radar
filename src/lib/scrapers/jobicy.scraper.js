@@ -2,29 +2,6 @@ import { BaseScraper } from './scraper.interface.js';
 import { isIndiaOrStrictlyRemote } from '../classification.js';
 
 export class JobicyScraper extends BaseScraper {
-  getMockJobs() {
-    return [
-      {
-        id: 'mock-jby-1',
-        title: 'Lead DevOps Engineer',
-        company: 'Cloud Native Systems',
-        location: 'Remote (Worldwide)',
-        descriptionSnippet: 'Architect multi-region Kubernetes clusters and automation tooling.',
-        applyUrl: 'https://jobicy.com/jobs/mock-jby-1',
-        postedDate: new Date().toISOString()
-      },
-      {
-        id: 'mock-jby-2',
-        title: 'Senior Frontend Engineer (React/Next.js)',
-        company: 'NextGen Tech',
-        location: 'Remote',
-        descriptionSnippet: 'Build high performance user interfaces using Next.js, React, and TypeScript.',
-        applyUrl: 'https://jobicy.com/jobs/mock-jby-2',
-        postedDate: new Date().toISOString()
-      }
-    ];
-  }
-
   async scrape() {
     try {
       console.log('[Jobicy] Fetching remote jobs via API...');
@@ -78,10 +55,10 @@ export class JobicyScraper extends BaseScraper {
       }
 
       console.log(`[Jobicy] Parsed ${jobs.length} remote jobs.`);
-      return jobs.length > 0 ? jobs : this.getMockJobs();
+      return jobs;
     } catch (err) {
       console.error('[Jobicy] Scrape error:', err.message);
-      return this.getMockJobs();
+      return [];
     }
   }
 }

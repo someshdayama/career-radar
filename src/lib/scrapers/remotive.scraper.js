@@ -2,20 +2,6 @@ import { BaseScraper } from './scraper.interface.js';
 import { isIndiaOrStrictlyRemote } from '../classification.js';
 
 export class RemotiveScraper extends BaseScraper {
-  getMockJobs() {
-    return [
-      {
-        id: 'mock-rem-1',
-        title: 'Senior DevOps Engineer',
-        company: 'CloudScale',
-        location: 'Remote (Global)',
-        descriptionSnippet: 'Architect and scale Kubernetes infrastructure, CI/CD pipelines, and cloud resources.',
-        applyUrl: 'https://remotive.com/jobs/mock-rem-1',
-        postedDate: new Date().toISOString()
-      }
-    ];
-  }
-
   async scrape() {
     try {
       console.log('[Remotive] Fetching tech categories in parallel...');
@@ -71,10 +57,10 @@ export class RemotiveScraper extends BaseScraper {
         };
       });
 
-      return mapped.length > 0 ? mapped : this.getMockJobs();
+      return mapped;
     } catch (err) {
       console.error('[Remotive] Scrape error:', err.message);
-      return this.getMockJobs();
+      return [];
     }
   }
 }

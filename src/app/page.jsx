@@ -4,6 +4,14 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import JobCard from '@/components/JobCard';
 import JobDetailModal from '@/components/JobDetailModal';
 import { IT_ROLES, classifyJobRole, isIndiaOrStrictlyRemote } from '@/lib/classification';
+import {
+  loadSavedJobs,
+  persistSavedJobs,
+  toggleSavedJob,
+  refreshSavedSnapshots,
+  resolveSavedJobsList,
+  savedJobIdSet,
+} from '@/lib/saved-jobs';
 
 const COMPANIES = [
   'linkedin',
@@ -82,11 +90,6 @@ function markJobsAsSeen(jobs) {
   } catch {}
 }
 
-function getSavedJobIds() {
-  if (typeof window === 'undefined') return new Set();
-  try { return new Set(JSON.parse(localStorage.getItem('career-radar-saved') || '[]')); } catch { return new Set(); }
-}
-
 function getJobStatuses() {
   if (typeof window === 'undefined') return {};
   try { return JSON.parse(localStorage.getItem('career-radar-statuses') || '{}'); } catch { return {}; }
@@ -131,9 +134,27 @@ function exportToCSV(jobs, filterLabel) {
   URL.revokeObjectURL(url);
 }
 
+function enrichJob(job, companyKey) {
+  let displayCompany = job.company;
+  if (!displayCompany || displayCompany.toLowerCase() === 'linkedin') {
+    displayCompany = COMPANY_META[companyKey]?.label || job.company || 'Tech Company';
+  }
+
+  const applyUrl = job.applyUrl?.startsWith('/api/jobs/resolve-apply')
+    ? job.applyUrl
+    : `/api/jobs/resolve-apply?url=${encodeURIComponent(job.applyUrl || '')}`;
+
+  return {
+    ...job,
+    company: displayCompany,
+    applyUrl,
+    classifiedRole: job.classifiedRole || classifyJobRole(job.title),
+    sourceCompany: job.sourceCompany || companyKey,
+  };
+}
+
 export default function Home() {
   const [allJobs,          setAllJobs]          = useState({});
-  const [companyErrors,    setCompanyErrors]     = useState({});
   const [loadingCompanies, setLoadingCompanies]  = useState(new Set(COMPANIES));
   const [activeRole,       setActiveRole]        = useState('all');
   const [sourceFilter,     setSourceFilter]      = useState('all');
@@ -145,16 +166,22 @@ export default function Home() {
   const [dateFilter,       setDateFilter]        = useState('any');
   const [visibleCount,     setVisibleCount]      = useState(PAGE_SIZE);
   const [selectedJob,      setSelectedJob]       = useState(null);
-  const [savedJobIds,      setSavedJobIds]       = useState(() => getSavedJobIds());
+  const [savedJobsMap,     setSavedJobsMap]      = useState({});
+  const [savedReady,       setSavedReady]        = useState(false);
   const [jobStatuses,      setJobStatuses]       = useState(() => getJobStatuses());
   const [showSaved,        setShowSaved]         = useState(false);
 
   const fetchStarted = useRef(false);
   const searchInputRef = useRef(null);
 
+  // Hydrate saved snapshots on client mount (before any persist)
+  useEffect(() => {
+    setSavedJobsMap(loadSavedJobs());
+    setSavedReady(true);
+  }, []);
+
   const startStreaming = useCallback((force = false) => {
     setAllJobs({});
-    setCompanyErrors({});
     setLoadingCompanies(new Set(COMPANIES));
     setFromCache(false);
     setCacheAge(null);
@@ -170,7 +197,10 @@ export default function Home() {
 
         const pump = () =>
           reader.read().then(({ done, value }) => {
-            if (done) return;
+            if (done) {
+              setLoadingCompanies(new Set());
+              return;
+            }
             buffer += decoder.decode(value, { stream: true });
             const parts = buffer.split('\n\n');
             buffer = parts.pop();
@@ -180,15 +210,14 @@ export default function Home() {
               if (!line.startsWith('data:')) return;
               try {
                 const payload = JSON.parse(line.slice(5).trim());
-                const { company: c, data, error, cached, cacheAge: age } = payload;
+                const { company: c, data, cached, cacheAge: age } = payload;
 
-                setAllJobs(prev => ({ ...prev, [c]: data }));
+                setAllJobs(prev => ({ ...prev, [c]: data || [] }));
                 setLoadingCompanies(prev => {
                   const next = new Set(prev);
                   next.delete(c);
                   return next;
                 });
-                if (error) setCompanyErrors(prev => ({ ...prev, [c]: error }));
                 if (cached) { setFromCache(true); setCacheAge(age); }
                 if (data?.length) markJobsAsSeen(data);
               } catch (e) {
@@ -200,7 +229,9 @@ export default function Home() {
 
         return pump();
       })
-      .catch(() => setLoadingCompanies(new Set()));
+      .catch(() => {
+        setLoadingCompanies(new Set());
+      });
   }, []);
 
   // Bootstrap: kick off stream
@@ -245,22 +276,18 @@ export default function Home() {
   // Reset pagination when active role/filter changes
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [activeRole, showSaved, dateFilter, sourceFilter, locationFilter, search]);
 
-  // Persist saved + statuses to localStorage
+  // Persist saved snapshots only after hydration (avoids wiping storage with {})
   useEffect(() => {
-    try { localStorage.setItem('career-radar-saved', JSON.stringify([...savedJobIds])); } catch {}
-  }, [savedJobIds]);
+    if (!savedReady) return;
+    persistSavedJobs(savedJobsMap);
+  }, [savedJobsMap, savedReady]);
 
   useEffect(() => {
     try { localStorage.setItem('career-radar-statuses', JSON.stringify(jobStatuses)); } catch {}
   }, [jobStatuses]);
 
-  const handleToggleSave = useCallback((jobId) => {
-    setSavedJobIds(prev => {
-      const next = new Set(prev);
-      if (next.has(jobId)) next.delete(jobId);
-      else next.add(jobId);
-      return next;
-    });
+  const handleToggleSave = useCallback((job) => {
+    setSavedJobsMap(prev => toggleSavedJob(prev, job));
   }, []);
 
   const handleStatusChange = useCallback((jobId, status) => {
@@ -275,6 +302,7 @@ export default function Home() {
   // Derived values
   const isAllDone        = loadingCompanies.size === 0;
   const completedCount   = COMPANIES.length - loadingCompanies.size;
+  const savedJobIds      = useMemo(() => savedJobIdSet(savedJobsMap), [savedJobsMap]);
   
   // Flatten, enrich, and cross-source deduplicate all jobs
   const allJobsFlat = useMemo(() => {
@@ -284,23 +312,7 @@ export default function Home() {
         jobsList.forEach(job => {
           // Strictly filter for jobs located in India or strictly Remote/Global/Worldwide
           if (!isIndiaOrStrictlyRemote(job.location)) return;
-
-          const classified = classifyJobRole(job.title);
-          
-          let displayCompany = job.company;
-          if (!displayCompany || displayCompany.toLowerCase() === 'linkedin') {
-            displayCompany = COMPANY_META[companyKey]?.label || job.company || 'Tech Company';
-          }
-
-          const resolvedApplyUrl = `/api/jobs/resolve-apply?url=${encodeURIComponent(job.applyUrl)}`;
-
-          rawFlat.push({
-            ...job,
-            company: displayCompany,
-            applyUrl: resolvedApplyUrl,
-            classifiedRole: classified,
-            sourceCompany: companyKey,
-          });
+          rawFlat.push(enrichJob(job, companyKey));
         });
       }
     });
@@ -334,11 +346,20 @@ export default function Home() {
     return Array.from(dedupMap.values());
   }, [allJobs]);
 
+  // Refresh saved snapshots when live jobs update (fill migrated shells + fresher fields)
+  useEffect(() => {
+    if (!allJobsFlat.length || !Object.keys(savedJobsMap).length) return;
+    const refreshed = refreshSavedSnapshots(savedJobsMap, allJobsFlat);
+    if (refreshed !== savedJobsMap) {
+      setSavedJobsMap(refreshed);
+    }
+  }, [allJobsFlat]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const totalJobs = allJobsFlat.length;
 
   const savedJobs = useMemo(
-    () => allJobsFlat.filter(j => savedJobIds.has(j.id)),
-    [allJobsFlat, savedJobIds]
+    () => resolveSavedJobsList(savedJobsMap, allJobsFlat),
+    [savedJobsMap, allJobsFlat]
   );
 
   const baseJobs = showSaved ? savedJobs : allJobsFlat;
@@ -390,7 +411,6 @@ export default function Home() {
   const paginatedJobs = useMemo(() => sortedJobs.slice(0, visibleCount), [sortedJobs, visibleCount]);
   const hasMore = sortedJobs.length > visibleCount;
 
-  const errorsList = Object.entries(companyErrors).filter(([_, err]) => err);
   const isCurrentLoading = totalJobs === 0 && !isAllDone;
   const activeRoleLabel = IT_ROLES.find(r => r.id === activeRole)?.label || 'IT';
 
@@ -408,9 +428,12 @@ export default function Home() {
           {/* Top Bar: Stats + Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-white/10">
             <div className="flex items-center gap-3">
-              {totalJobs > 0 && (
+              {(totalJobs > 0 || isAllDone) && (
                 <div className="flex items-center gap-2 text-xs text-zinc-400">
-                  <span>Found <strong className="text-white font-semibold">{totalJobs} jobs</strong> across <strong className="text-white font-semibold">{completedCount} sources</strong></span>
+                  <span>
+                    Found <strong className="text-white font-semibold">{totalJobs} jobs</strong>
+                    {' '}across <strong className="text-white font-semibold">{completedCount}</strong> sources
+                  </span>
                   {!isAllDone && <span className="text-amber-400 font-medium animate-pulse"> · scanning...</span>}
                   {fromCache && cacheAge !== null && (
                     <span className="text-zinc-500 hidden md:inline"> · Served from cache ({Math.round(cacheAge / 60)}m ago)</span>
@@ -568,13 +591,6 @@ export default function Home() {
 
         {/* Job Grid Content (Responsive 4-column layout on wider screens) */}
         <div className="relative min-h-[350px]">
-          {/* Active warnings */}
-          {!showSaved && errorsList.map(([c, err]) => (
-            <div key={c} className="mb-3 flex items-center gap-3 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-              <span>⚠</span>
-              <span>Could not scrape {COMPANY_META[c]?.label || c}: {err}</span>
-            </div>
-          ))}
 
           {isCurrentLoading && !showSaved && (
             <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 py-20">
@@ -591,7 +607,7 @@ export default function Home() {
             <div className="text-center p-12 text-gray-400">
               <span className="text-4xl block mb-3">🔖</span>
               <p className="text-base font-medium">No saved jobs yet</p>
-              <p className="text-xs text-zinc-600 mt-1">Star a job card to save it here for later.</p>
+              <p className="text-xs text-zinc-600 mt-1">Star a job card to save a full snapshot here for later.</p>
             </div>
           )}
 
