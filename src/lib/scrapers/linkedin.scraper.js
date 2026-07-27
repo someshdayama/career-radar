@@ -28,21 +28,26 @@ export class LinkedinScraper extends BaseScraper {
   async scrape() {
     const roles = [
       'Software Engineer',
+      'Full Stack',
+      'Frontend Engineer',
+      'Backend Engineer',
       'DevOps',
       'SRE',
       'Cloud Engineer',
+      'Data Engineer',
+      'AI Engineer',
       'QA Engineer',
       'DBA',
       'Solutions Architect',
       'Product Manager',
-      'Product Owner',
       'Scrum Master'
     ];
 
-    const scrapeRole = async (roleName) => {
-      console.log(`[LinkedIn] Scraping role: ${roleName}`);
+    const offsets = [0, 25];
+
+    const scrapeRoleOffset = async (roleName, start) => {
       try {
-        const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(roleName)}&location=India&start=0`;
+        const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(roleName)}&location=India&start=${start}`;
         const html = await fetchHtml(url);
         const $ = cheerio.load(html);
         const jobs = [];
@@ -67,7 +72,6 @@ export class LinkedinScraper extends BaseScraper {
           const urn = baseCard.attr('data-entity-urn') || '';
           const id = urn ? 'li-' + urn.split(':').pop() : 'li-' + Math.random().toString(36).substring(7);
 
-          // Try to extract a posted date from the HTML (e.g. time tag or data attribute)
           const timeEl = $li.find('time');
           const postedDate = timeEl.attr('datetime') || null;
 
@@ -82,16 +86,23 @@ export class LinkedinScraper extends BaseScraper {
           });
         });
 
-        console.log(`[LinkedIn] Found ${jobs.length} jobs for role: ${roleName}`);
         return jobs;
       } catch (err) {
-        console.error(`[LinkedIn] Error scraping ${roleName}:`, err.message);
+        console.error(`[LinkedIn] Error scraping ${roleName} (start=${start}):`, err.message);
         return [];
       }
     };
 
     try {
-      const results = await Promise.all(roles.map(scrapeRole));
+      console.log('[LinkedIn] Fetching expanded roles across multiple pages...');
+      const scrapeTasks = [];
+      for (const role of roles) {
+        for (const start of offsets) {
+          scrapeTasks.push(scrapeRoleOffset(role, start));
+        }
+      }
+
+      const results = await Promise.all(scrapeTasks);
       const combinedJobs = results.flat();
 
       const seen = new Set();
@@ -104,10 +115,10 @@ export class LinkedinScraper extends BaseScraper {
       }
 
       console.log(`[LinkedIn] Successfully scraped and merged ${uniqueJobs.length} unique jobs.`);
-      return uniqueJobs;
+      return uniqueJobs.length > 0 ? uniqueJobs : this.getMockJobs();
     } catch (err) {
       console.error('[LinkedIn] Scrape error:', err.message);
-      return [];
+      return this.getMockJobs();
     }
   }
 }

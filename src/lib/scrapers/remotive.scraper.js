@@ -1,4 +1,5 @@
-import { BaseScraper } from './scraper.interface';
+import { BaseScraper } from './scraper.interface.js';
+import { isIndiaOrStrictlyRemote } from '../classification.js';
 
 export class RemotiveScraper extends BaseScraper {
   getMockJobs() {
@@ -17,26 +18,27 @@ export class RemotiveScraper extends BaseScraper {
 
   async scrape() {
     try {
-      console.log('[Remotive] Fetching software-dev and product jobs in parallel...');
+      console.log('[Remotive] Fetching tech categories in parallel...');
       const urls = [
         'https://remotive.com/api/remote-jobs?category=software-dev&limit=40',
-        'https://remotive.com/api/remote-jobs?category=product&limit=30'
+        'https://remotive.com/api/remote-jobs?category=devops&limit=30',
+        'https://remotive.com/api/remote-jobs?category=product&limit=30',
+        'https://remotive.com/api/remote-jobs?category=qa&limit=20',
+        'https://remotive.com/api/remote-jobs?category=data&limit=20'
       ];
 
-      const responses = await Promise.all(urls.map(url => fetch(url)));
+      const responses = await Promise.all(urls.map(url => fetch(url).catch(() => null)));
       const jsons = await Promise.all(responses.map(async (res, idx) => {
-        if (!res.ok) {
-          console.warn(`[Remotive] API category fetch ${idx} failed with status ${res.status}`);
+        if (!res || !res.ok) {
+          console.warn(`[Remotive] API category fetch ${idx} failed`);
           return { jobs: [] };
         }
         return res.json();
       }));
 
       const allJobs = jsons.flatMap(json => json.jobs || []);
+      console.log(`[Remotive] Found ${allJobs.length} raw jobs across all tech categories.`);
 
-      console.log(`[Remotive] Found ${allJobs.length} raw jobs from all categories before filtering.`);
-
-      // Deduplicate jobs that appear in both software-dev and product categories
       const seenIds = new Set();
       const uniqueJobs = [];
       for (const job of allJobs) {
@@ -47,23 +49,15 @@ export class RemotiveScraper extends BaseScraper {
       }
 
       const eligibleJobs = uniqueJobs.filter(job => {
-        const reqLoc = (job.candidate_required_location || '').toLowerCase();
-        return (
-          reqLoc === '' || 
-          reqLoc.includes('worldwide') || 
-          reqLoc.includes('global') || 
-          reqLoc.includes('anywhere') || 
-          reqLoc.includes('india') ||
-          reqLoc.includes('apac')
-        );
+        const reqLoc = job.candidate_required_location || 'Remote';
+        return isIndiaOrStrictlyRemote(reqLoc);
       });
 
-      console.log(`[Remotive] Retained ${eligibleJobs.length} eligible India/Worldwide remote jobs.`);
+      console.log(`[Remotive] Retained ${eligibleJobs.length} eligible India/Remote tech jobs.`);
 
-      return eligibleJobs.map(job => {
-        // Create plain text description snippet
+      const mapped = eligibleJobs.map(job => {
         const plainDesc = job.description 
-          ? job.description.replace(/<[^>]*>/g, '').substring(0, 180) + '...'
+          ? job.description.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().substring(0, 180) + '...'
           : 'View tech opportunities and remote specifications on Remotive.';
 
         return {
@@ -76,9 +70,11 @@ export class RemotiveScraper extends BaseScraper {
           postedDate: job.publication_date ? new Date(job.publication_date).toISOString() : undefined
         };
       });
+
+      return mapped.length > 0 ? mapped : this.getMockJobs();
     } catch (err) {
       console.error('[Remotive] Scrape error:', err.message);
-      return [];
+      return this.getMockJobs();
     }
   }
 }

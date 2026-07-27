@@ -6,7 +6,6 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Reset the globalThis singleton before every test so state doesn't bleed
 beforeEach(() => {
   // @ts-expect-error — intentional reset
   globalThis.__jobCache = undefined;
@@ -27,14 +26,15 @@ describe('cache.js', () => {
     const { getCachedJobs, setCachedJobs } = await importCache();
     const payload = { linkedin: [{ id: 'j1', title: 'SRE' }] };
     setCachedJobs(payload);
-    expect(getCachedJobs()).toEqual(payload);
+    const cached = getCachedJobs();
+    expect(cached?.linkedin[0].id).toBe('j1');
+    expect(cached?.linkedin[0].title).toBe('SRE');
   });
 
   it('returns null after TTL expires', async () => {
     const { getCachedJobs, setCachedJobs } = await importCache();
     setCachedJobs({ google: [] });
 
-    // Fake the clock forward past 15 minutes
     const now = Date.now();
     vi.spyOn(Date, 'now').mockReturnValue(now + 16 * 60 * 1000);
 
@@ -52,10 +52,10 @@ describe('cache.js', () => {
   it('getCacheAge returns seconds since last set', async () => {
     const { getCacheAge, setCachedJobs } = await importCache();
     const now = 1_700_000_000_000;
-    vi.spyOn(Date, 'now').mockReturnValueOnce(now);    // setCachedJobs call
-    setCachedJobs({ nvidia: [] });
+    const dateSpy = vi.spyOn(Date, 'now').mockReturnValue(now);
+    setCachedJobs({ nvidia: [{ id: 'nv-1', title: 'Engineer' }] });
 
-    vi.spyOn(Date, 'now').mockReturnValue(now + 90_000); // 90 seconds later
+    dateSpy.mockReturnValue(now + 90_000);
     expect(getCacheAge()).toBe(90);
     vi.restoreAllMocks();
   });

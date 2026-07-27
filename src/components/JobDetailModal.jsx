@@ -14,7 +14,7 @@ const STATUS_OPTIONS = [
  * Modal / Slide-over panel showing full job details.
  * Opens when a JobCard is clicked. Supports Escape to close.
  */
-export default function JobDetailModal({ job, onClose, onApply, jobStatuses, onStatusChange }) {
+export default function JobDetailModal({ job, onClose, jobStatuses, onStatusChange }) {
   const [copied, setCopied] = useState(false);
   const currentStatus = job ? (jobStatuses?.[job.id] || '') : '';
 

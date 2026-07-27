@@ -1,15 +1,14 @@
 /**
- * Integration smoke tests for the main page (src/app/page.js).
+ * Integration smoke tests for the main page (src/app/page.jsx).
  *
- * Tests: initial render, company tab switching, search filtering,
- * bookmarks tab, empty-state messaging.
+ * Tests: initial render, IT role tab navigation, source filtering, search filtering,
+ * bookmarks tab, and clear search capability.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
-// Mock JobCard so we can render just the page logic without full component tree
 vi.mock('@/components/JobCard', () => ({
   default: ({ job }: { job: { title: string } }) => (
     <div data-testid="job-card">{job.title}</div>
@@ -17,12 +16,16 @@ vi.mock('@/components/JobCard', () => ({
 }));
 
 const MOCK_STREAM_JOBS = {
-  linkedin:  [{ id: 'li-1', title: 'DevOps Engineer',        company: 'LinkedIn',  location: 'Bengaluru, India', descriptionSnippet: 'desc', applyUrl: '#' }],
-  microsoft: [{ id: 'ms-1', title: 'Senior Azure Engineer',  company: 'Microsoft', location: 'Hyderabad, India', descriptionSnippet: 'desc', applyUrl: '#' }],
-  google:    [{ id: 'goo-1', title: 'SRE',                   company: 'Google',    location: 'Bengaluru, India', descriptionSnippet: 'desc', applyUrl: '#' }],
-  amazon:    [{ id: 'amz-1', title: 'Cloud Ops Engineer',    company: 'Amazon',    location: 'Chennai, India',   descriptionSnippet: 'desc', applyUrl: '#' }],
-  apple:     [{ id: 'apl-1', title: 'Infrastructure Eng',    company: 'Apple',     location: 'Hyderabad, India', descriptionSnippet: 'desc', applyUrl: '#' }],
-  nvidia:    [{ id: 'nv-1',  title: 'ML Infra Engineer',     company: 'Nvidia',    location: 'Pune, India',      descriptionSnippet: 'desc', applyUrl: '#' }],
+  linkedin:       [{ id: 'li-1',  title: 'DevOps Engineer',        company: 'LinkedIn',       location: 'Bengaluru, India', descriptionSnippet: 'desc', applyUrl: '#' }],
+  microsoft:      [{ id: 'ms-1',  title: 'Senior Azure Engineer',  company: 'Microsoft',      location: 'Hyderabad, India', descriptionSnippet: 'desc', applyUrl: '#' }],
+  google:         [{ id: 'goo-1', title: 'SRE',                   company: 'Google',         location: 'Bengaluru, India', descriptionSnippet: 'desc', applyUrl: '#' }],
+  amazon:         [{ id: 'amz-1', title: 'Cloud Ops Engineer',    company: 'Amazon',         location: 'Chennai, India',   descriptionSnippet: 'desc', applyUrl: '#' }],
+  apple:          [{ id: 'apl-1', title: 'Infrastructure Eng',    company: 'Apple',          location: 'Hyderabad, India', descriptionSnippet: 'desc', applyUrl: '#' }],
+  nvidia:         [{ id: 'nv-1',  title: 'ML Infra Engineer',     company: 'Nvidia',         location: 'Pune, India',      descriptionSnippet: 'desc', applyUrl: '#' }],
+  remoteok:       [{ id: 'rok-1', title: 'Full Stack Engineer',    company: 'RemoteOK',       location: 'Remote',           descriptionSnippet: 'desc', applyUrl: '#' }],
+  jobicy:         [{ id: 'jby-1', title: 'QA Automation Lead',    company: 'Jobicy Partner', location: 'Remote',           descriptionSnippet: 'desc', applyUrl: '#' }],
+  hnjobs:         [{ id: 'hn-1',  title: 'AI Researcher',          company: 'HN Startup',     location: 'Remote',           descriptionSnippet: 'desc', applyUrl: '#' }],
+  weworkremotely: [{ id: 'wwr-1', title: 'Backend Developer',      company: 'WWR Client',     location: 'Remote',           descriptionSnippet: 'desc', applyUrl: '#' }],
 };
 
 function buildSSEStream() {
@@ -42,7 +45,6 @@ globalThis.fetch = vi.fn().mockResolvedValue({
   body: buildSSEStream(),
 });
 
-// Minimal localStorage stub
 const lsStore: Record<string, string> = {};
 Object.defineProperty(window, 'localStorage', {
   value: {
@@ -59,12 +61,10 @@ let Home: typeof import('@/app/page').default;
 beforeEach(async () => {
   Object.keys(lsStore).forEach(k => delete lsStore[k]);
   vi.clearAllMocks();
-  // Reset fetch mock to return a fresh stream per test
   (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
     ok: true,
     body: buildSSEStream(),
   });
-  // Re-import to get fresh module state
   vi.resetModules();
   vi.mock('@/components/JobCard', () => ({
     default: ({ job }: { job: { title: string } }) => (
@@ -75,11 +75,12 @@ beforeEach(async () => {
 });
 
 describe('Home page', () => {
-  it('renders company tab buttons', () => {
+  it('renders IT role tab buttons', () => {
     render(<Home />);
-    expect(screen.getByRole('button', { name: /LinkedIn/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Microsoft/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Google/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /All IT Jobs/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Software Engineer/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /DevOps \/ SRE/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Data & AI \/ ML/i })).toBeInTheDocument();
   });
 
   it('shows job cards after stream completes', async () => {
@@ -89,13 +90,13 @@ describe('Home page', () => {
     });
   });
 
-  it('switching to Microsoft tab shows Microsoft jobs', async () => {
+  it('switching to DevOps tab filters jobs by role', async () => {
     render(<Home />);
     await waitFor(() => screen.getAllByTestId('job-card').length > 0);
 
-    await userEvent.click(screen.getByRole('button', { name: /Microsoft/i }));
+    await userEvent.click(screen.getByRole('button', { name: /DevOps \/ SRE/i }));
     await waitFor(() => {
-      expect(screen.getByText('Senior Azure Engineer')).toBeInTheDocument();
+      expect(screen.getByText('DevOps Engineer')).toBeInTheDocument();
     });
   });
 
@@ -104,8 +105,8 @@ describe('Home page', () => {
     await waitFor(() => screen.getAllByTestId('job-card').length > 0);
 
     const searchInput = screen.getByPlaceholderText(/Search by title/i);
-    await userEvent.type(searchInput, 'DevOps');
-    expect(screen.getByText('DevOps Engineer')).toBeInTheDocument();
+    await userEvent.type(searchInput, 'Azure');
+    expect(screen.getByText('Senior Azure Engineer')).toBeInTheDocument();
   });
 
   it('clear search button removes filter', async () => {
@@ -114,11 +115,9 @@ describe('Home page', () => {
 
     const searchInput = screen.getByPlaceholderText(/Search by title/i);
     await userEvent.type(searchInput, 'xyz-nonexistent');
-    // empty state
     expect(screen.getByText(/No jobs matching/i)).toBeInTheDocument();
 
     await userEvent.click(screen.getByText('✕'));
-    // jobs return
     await waitFor(() => screen.getAllByTestId('job-card').length > 0);
   });
 });

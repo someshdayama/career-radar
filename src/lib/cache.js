@@ -10,18 +10,20 @@
 
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
-if (!globalThis.__jobCache) {
-  globalThis.__jobCache = {
-    data: null,      // { microsoft: [...], google: [...], ... }
-    timestamp: 0,
-    inFlight: false, // true while a scrape is in progress
-  };
+function getStore() {
+  if (!globalThis.__jobCache) {
+    globalThis.__jobCache = {
+      data: null,      // { microsoft: [...], google: [...], ... }
+      timestamp: 0,
+      inFlight: false, // true while a scrape is in progress
+    };
+  }
+  return globalThis.__jobCache;
 }
-
-const store = globalThis.__jobCache;
 
 /** Returns cached data if still fresh, or null on a cache miss. */
 export function getCachedJobs() {
+  const store = getStore();
   if (store.data && Date.now() - store.timestamp < CACHE_TTL_MS) {
     return store.data;
   }
@@ -30,16 +32,17 @@ export function getCachedJobs() {
 
 /** Returns true if a scrape is currently running (prevents stampedes). */
 export function isCacheInFlight() {
-  return store.inFlight;
+  return getStore().inFlight;
 }
 
 /** Call before starting a scrape to claim the in-flight slot. */
 export function markCacheInFlight() {
-  store.inFlight = true;
+  getStore().inFlight = true;
 }
 
 /** Persists fresh data by merging it incrementally with existing cache. */
 export function setCachedJobs(newData) {
+  const store = getStore();
   if (!store.data) {
     store.data = {};
   }
@@ -94,12 +97,14 @@ export function setCachedJobs(newData) {
 
 /** Age of the current cache entry in seconds. */
 export function getCacheAge() {
+  const store = getStore();
   if (!store.timestamp) return null;
   return Math.round((Date.now() - store.timestamp) / 1000);
 }
 
 /** Force-expire the cache (e.g. after a manual Refresh). */
 export function invalidateCache() {
+  const store = getStore();
   store.data = null;
   store.timestamp = 0;
   store.inFlight = false;
